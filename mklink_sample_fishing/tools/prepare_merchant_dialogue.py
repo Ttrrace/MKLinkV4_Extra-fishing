@@ -20,7 +20,7 @@ out.write_text('/* Generated from docs/merchant-dialogue.md. */\n#ifndef FISH_ME
 print('Exported 15 contexts, 30 lines and four expression mappings; glyph update required for new characters.')
 city=root/'docs/city-merchant-dialogue.md'
 if city.exists():
-    city_keys=keys[:-1]+('latte',)
+    city_keys=keys[:-1]+('latte','noodles')
     rows={}
     for line in city.read_text(encoding='utf-8').splitlines():
         cells=[c.strip() for c in line.strip().strip('|').split('|')]
@@ -29,8 +29,8 @@ if city.exists():
         rows[key]=(int(pose),a,b)
     assert set(rows)==set(city_keys)
     target=out.with_name('fish_city_dialogue_data.h')
-    target.write_text('/* Generated from docs/city-merchant-dialogue.md. */\n#ifndef FISH_CITY_DIALOGUE_DATA_H\n#define FISH_CITY_DIALOGUE_DATA_H\nstatic const fish_merchant_dialogue_t fish_city_dialogue[15]={\n'+''.join('    {'+str(rows[k][0])+',{'+','.join(json.dumps(s,ensure_ascii=False) for s in rows[k][1:])+'}},\n' for k in city_keys)+'};\n#endif\n',encoding='utf-8')
-    print('Exported 30 editable city clerk lines and five expressions.')
+    target.write_text('/* Generated from docs/city-merchant-dialogue.md. */\n#ifndef FISH_CITY_DIALOGUE_DATA_H\n#define FISH_CITY_DIALOGUE_DATA_H\nstatic const fish_merchant_dialogue_t fish_city_dialogue[16]={\n'+''.join('    {'+str(rows[k][0])+',{'+','.join(json.dumps(s,ensure_ascii=False) for s in rows[k][1:])+'}},\n' for k in city_keys)+'};\n#endif\n',encoding='utf-8')
+    print('Exported 32 editable city clerk lines and five expressions.')
     rows={}
     for line in (root/'docs/city-fishmonger-dialogue.md').read_text(encoding='utf-8').splitlines():
         cells=[c.strip() for c in line.strip().strip('|').split('|')]

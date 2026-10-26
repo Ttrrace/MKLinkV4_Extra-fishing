@@ -62,7 +62,11 @@ int main(void)
                 ++failed;
             }
             /* Ordinary sizes and suitable thick tackle must remain playable. */
-            if(line==2 || sizes[size]==s->min_mm) assert(g.mode==FISH_CAUGHT);
+            bool specialized_small=rod==FISH_LONG_ROD && fish_species_weight_g(s,sizes[size])<1500;
+            if(!specialized_small && (line==2 || sizes[size]==s->min_mm)) {
+                if(g.mode!=FISH_CAUGHT)fprintf(stderr,"balance species=%u size=%u rod=%u line=%u delay=%u loss=%u distance=%u tension=%d\n",id,sizes[size],rod,line,delay,g.loss,fish_game_distance_cm(&g),g.tension);
+                assert(g.mode==FISH_CAUGHT);
+            }
             ++cases;payout_cases+=pays>0;
             if (id==1 && sizes[size]==s->star_min_mm[2] && rod==FISH_DEFAULT_ROD && delay==4)
                 printf("four_star_trial line=%u reaction_ms=400 landing_ms=%u payout_detents=%u loss=%u\n",line,g.mode==FISH_CAUGHT?g.phase_at:0,pays,g.loss);

@@ -13,7 +13,15 @@ static void lost(fish_game_t *g, fish_loss_t reason)
     int dx,dy;fish_game_float(g,&dx,&dy);
     g->float_dx_q8=dx*256;g->float_dy_q8=dy*256;
     g->loss=reason;g->pressed=false;g->boat_speed=0;g->boat_motion_q8=0;
-    if(reason==FISH_LOSS_BREAK) {
+    /* One wear roll per actual break, never per fight tick or loss frame. */
+    g->line_damaged=reason==FISH_LOSS_BREAK && fish_random_next(&g->random_state)%100<FISH_LINE_DAMAGE_PERCENT;
+    /* A hooked puffer can bite through while escaping. This independent roll
+     * still runs if normal wear succeeded, but ownership is removed only once. */
+    g->line_bitten=g->pending_species==23 &&
+        (reason==FISH_LOSS_BREAK || reason==FISH_LOSS_SLACK || reason==FISH_LOSS_RANGE) &&
+        fish_random_next(&g->random_state)%100<FISH_PUFFER_BITE_PERCENT;
+    if(g->line_bitten){g->line_damaged=true;g->loss=FISH_LOSS_BREAK;}
+    if(g->line_damaged) {
         g->economy.lines&=(uint8_t)~(1u<<g->line_index);
         for(unsigned i=0;i<FISH_LINE_COUNT;i++)if(g->economy.lines&(1u<<i)){fish_game_equip_line(g,i);break;}
         g->save_requested=true;
@@ -57,7 +65,8 @@ static unsigned strike_deadline(const fish_game_t *g)
     const fish_species_t *s=fish_species_profile(g->map_index,g->pending_species);
     unsigned window=(s->bite_window_ms-s->strike_delay_ms)*fish_line_sets[g->line_index].strike_window_percent/100;
     window=window*(100+fish_floats[g->float_index].strike_window_bonus_percent)/100;
-    if(g->latte_remaining_ms)window=window*110/100;
+    /* Noodles improve line handling only; latte also extends the strike. */
+    if(!(g->comforts&FISH_COMFORT_NOODLES))window=window*fish_game_refresh_percent(g)/100;
     return s->strike_delay_ms+window;
 }
 bool fish_game_strike_ready(const fish_game_t *g)
@@ -241,7 +250,12 @@ static void fight_update(fish_game_t *g)
         g->reel=clamp(g->reel_units/100,0,100);
         g->overload_ms=(uint16_t)clamp(g->overload_ms+(g->tension>=g->line_strength?20:
             -(int)fish_rules.overload_recovery_per_tick_ms),0,fish_rules.overload_limit_ms);
-        g->slack_ms=(uint16_t)clamp(g->slack_ms+(g->tension<=g->line_strength*12/100?(burst?(leaper?60:40):20):
+        int slip=burst?(leaper?60:40):20;
+        if(g->rod_index==FISH_LONG_ROD && g->pending_weight_g<1500) {
+            unsigned small=g->pending_weight_g<=500?1000:1500-g->pending_weight_g;
+            slip+=slip*(int)small/2000; /* +50% at<=500g, fading to0 at1.5kg. */
+        }
+        g->slack_ms=(uint16_t)clamp(g->slack_ms+(g->tension<=g->line_strength*12/100?slip:
             -(int)fish_rules.slack_recovery_per_tick_ms),0,fish_rules.slack_limit_ms);
         bool stretched=fish_game_distance(g)>g->line_capacity_units;
         g->range_ms=stretched?(uint16_t)clamp(g->range_ms+20,0,fish_rules.range_limit_ms):0;
@@ -285,13 +299,16 @@ unsigned fish_weather_strength(const fish_game_t *g)
 }
 unsigned fish_game_wetness_percent(const fish_game_t *g)
 {return g->wetness_units*100/FISH_WETNESS_FULL;}
+unsigned fish_game_refresh_percent(const fish_game_t *g)
+{return g->latte_remaining_ms?110:100;}
 unsigned fish_game_line_speed_percent(const fish_game_t *g)
 {
     unsigned loss=g->wetness_units*FISH_WET_SPEED_LOSS_PERCENT/FISH_WETNESS_FULL;
-    return (g->latte_remaining_ms?110u:100u)*(100-loss)/100;
+    return fish_game_refresh_percent(g)*(100-loss)/100;
 }
 void fish_weather_advance(fish_game_t *g,uint32_t elapsed,bool sheltered)
 {
+    sheltered|=(g->comforts&FISH_COMFORT_UMBRELLA)!=0;
     /* A long clock gap is bounded to its last144game hours. The guaranteed dry
      * gap erases any earlier wetness, so the exact resulting state is retained. */
     if(elapsed>2*FISH_WEATHER_PERIOD_MS) {
@@ -411,6 +428,7 @@ void fish_game_update(fish_game_t *g, uint32_t now)
     g->game_minute=(uint16_t)((g->game_minute+delta/1000+remainder/1000)%1440);
     g->clock_remainder_ms=(uint16_t)(remainder%1000);
     g->latte_remaining_ms=delta>=g->latte_remaining_ms?0:g->latte_remaining_ms-delta;
+    if(!g->latte_remaining_ms)g->comforts&=(uint8_t)~FISH_COMFORT_NOODLES;
     g->now = now;
     fish_money_update(g);
     if(g->mode==FISH_ROUTE && g->pressed && now-g->pressed_at>=FISH_GUIDE_HOLD_MS) {
@@ -548,7 +566,8 @@ void fish_game_input(fish_game_t *g, fish_event_t event, int steps, uint32_t now
             if (steps>0) {
                 /* Each detent costs tension; reeling during bursts is less effective. */
                 for (int i=0;i<steps;i++) {
-                    g->tension=clamp(g->tension+2+pull/20,0,g->line_strength+20);
+                    unsigned relief=g->pending_weight_g>6500?fish_rods[g->rod_index].reel_tension_relief:0;
+                    g->tension=clamp(g->tension+2+pull/20-(int)relief,0,g->line_strength+20);
                     int tired=g->stamina_max?(g->stamina_max-g->stamina)*100/g->stamina_max:100;
                     int gain=(850-pull*5)*fish_rods[g->rod_index].reel_percent/100;
                     gain=gain*(int)fish_game_line_speed_percent(g)/100;
@@ -702,6 +721,7 @@ void fish_game_travel_complete(fish_game_t *g,bool success)
         unsigned elapsed=FISH_TRAVEL_MINUTES*1000u;
         fish_weather_advance(g,elapsed,true); /* Travel is sheltered. */
         g->latte_remaining_ms=elapsed>=g->latte_remaining_ms?0:g->latte_remaining_ms-elapsed;
+        if(!g->latte_remaining_ms)g->comforts&=(uint8_t)~FISH_COMFORT_NOODLES;
     }
     g->map_index=g->travel_target;g->travel_paid=false;
     g->shore_x=FISH_STATION_X;g->boat_x=FISH_BOAT_RIGHT;g->facing=-1;

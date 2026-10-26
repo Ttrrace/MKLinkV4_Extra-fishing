@@ -12,19 +12,32 @@
       "id": "bamboo",
       "name_zh": "竹竿",
       "max_cast_px": 88,
-      "reel_percent": 90
+      "reel_percent": 90,
+      "reel_tension_relief": 0
     },
     {
       "id": "fiberglass",
       "name_zh": "玻纤竿",
       "max_cast_px": 116,
-      "reel_percent": 100
+      "reel_percent": 100,
+      "reel_tension_relief": 0
     },
     {
       "id": "carbon",
       "name_zh": "碳素竿",
       "max_cast_px": 140,
-      "reel_percent": 110
+      "reel_percent": 110,
+      "reel_tension_relief": 0
+    },
+    {
+      "id": "long_carbon",
+      "name_zh": "高碳长竿",
+      "max_cast_px": 180,
+      "reel_percent": 125,
+      "reel_tension_relief": 1,
+      "price": 3500,
+      "city_only_purchase": true,
+      "small_fish_slack": "At<=500g low-tension slack accumulates50% faster; fades linearly to normal at1.5kg. No random forced escape."
     }
   ],
   "line_sets": [

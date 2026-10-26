@@ -9,7 +9,8 @@
 #include "fish_economy.h"
 
 enum { FISH_WORLD_WIDTH = FISH_MAP_WIDTH, FISH_HOLD_MS = 280, FISH_GUIDE_HOLD_MS=600, FISH_FULL_CHARGE_MS = 1400,
-       FISH_WORLD_CM_PER_PIXEL = 4, FISH_LOSS_ANIMATION_MS = 1200 };
+       FISH_WORLD_CM_PER_PIXEL = 4, FISH_LOSS_ANIMATION_MS = 1200,
+       FISH_LINE_DAMAGE_PERCENT = 10, FISH_PUFFER_BITE_PERCENT = 20 };
 typedef enum { FISH_MOVE, FISH_AIM, FISH_CHARGE, FISH_CAST,
                FISH_WAIT, FISH_BITE, FISH_FIGHT, FISH_CAUGHT, FISH_GUIDE,
                FISH_BAG, FISH_SHORE, FISH_LOST, FISH_SHOP, FISH_HOLD, FISH_ROUTE, FISH_LOADING } fish_mode_t;
@@ -45,6 +46,7 @@ typedef struct fish_game {
     uint8_t pending_species, last_species;
     uint8_t pending_variant;
     bool merchant_hint;
+    uint8_t comforts; /* Permanent umbrella and the active refreshment kind. */
     uint16_t pending_size_mm, last_size_mm;
     uint32_t pending_weight_g, last_weight_g;
     uint8_t base_pull,line_response_percent;
@@ -53,6 +55,8 @@ typedef struct fish_game {
     uint16_t overload_ms, slack_ms, range_ms;
     uint32_t line_capacity_units;
     uint8_t line_strength;
+    bool line_damaged; /* Result of the last loss; occupies existing padding. */
+    bool line_bitten; /* Puffer escape result; also fits the alignment gap. */
     int tension, reel_units;
     uint16_t stamina,stamina_max,recovery_ms;
     bool stamina_recovering;
@@ -81,12 +85,14 @@ typedef struct fish_game {
 } fish_game_t;
 
 enum {FISH_MAP_COUNT=2,FISH_TRAVEL_FARE=180,FISH_TRAVEL_MINUTES=300};
+enum {FISH_COMFORT_UMBRELLA=1,FISH_COMFORT_NOODLES=2,FISH_NOODLES_DURATION_MS=240000};
 enum {FISH_WEATHER_PERIOD_MS=4320000,FISH_WEATHER_CYCLE_MS=32*FISH_WEATHER_PERIOD_MS,
       FISH_WEATHER_FADE_MS=8000,FISH_WETNESS_FULL=120000,FISH_WET_SPEED_LOSS_PERCENT=20};
 unsigned fish_weather_rain(const fish_game_t *g); /* 0..255, smooth rain envelope. */
 unsigned fish_weather_strength(const fish_game_t *g); /* 0..255 extra near rain; zero retains light rain. */
 unsigned fish_game_wetness_percent(const fish_game_t *g);
 unsigned fish_game_line_speed_percent(const fish_game_t *g);
+unsigned fish_game_refresh_percent(const fish_game_t *g);
 void fish_weather_advance(fish_game_t *g,uint32_t elapsed_ms,bool sheltered);
 extern const char *const fish_map_names[FISH_MAP_COUNT];
 void fish_game_travel_complete(fish_game_t *g,bool success);

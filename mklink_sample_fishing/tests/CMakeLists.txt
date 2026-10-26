@@ -102,3 +102,8 @@ add_executable(feedback_tests feedback_tests.c ${CORE} ${APP}/fish_hpm_feedback.
 target_include_directories(feedback_tests PRIVATE feedback_stubs "${APP}")
 target_compile_options(feedback_tests PRIVATE -UNDEBUG -Wall -Wextra)
 add_test(NAME buzzer_feedback COMMAND feedback_tests)
+
+add_executable(city_gear_tests city_gear_tests.c ${CORE} ${APP}/fish_save.c ${APP}/fish_save_crypto.c ${CRYPTO})
+target_include_directories(city_gear_tests PRIVATE "${APP}" "${APP}/crypto/include")
+target_compile_options(city_gear_tests PRIVATE -UNDEBUG -Wall -Wextra)
+add_test(NAME city_long_rod_umbrella_noodles COMMAND city_gear_tests)

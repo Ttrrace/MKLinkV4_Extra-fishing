@@ -1,9 +1,10 @@
 /* Generated from data/equipment.json. */
 #include "fish_equipment.h"
 const fish_rod_t fish_rods[] = {
-    {"竹竿", 88, 90},
-    {"玻纤竿", 116, 100},
-    {"碳素竿", 140, 110},
+    {"竹竿", 88, 90, 0},
+    {"玻纤竿", 116, 100, 0},
+    {"碳素竿", 140, 110, 0},
+    {"高碳长竿", 180, 125, 1},
 };
 const fish_line_set_t fish_line_sets[] = {
     {"细线小钩", "小钩", 14000, 450, 75, 110, 18, 160, 300, {96, 94, 92}},

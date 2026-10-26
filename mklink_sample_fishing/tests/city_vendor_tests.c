@@ -23,7 +23,7 @@ static void fight(fish_game_t *g)
 int main(void)
 {
  fish_game_t g,a,b;unsigned removed[]={5,7,8,9};
- start(&g,FISH_VENDOR_TACKLE);assert(fish_shop_count(&g)==17);
+ start(&g,FISH_VENDOR_TACKLE);assert(fish_shop_count(&g)==18);
  for(unsigned i=0;i<fish_shop_count(&g);i++) {unsigned id=fish_shop_item_at(&g,i);assert(fish_shop_position(&g,id)==i);for(unsigned j=0;j<4;j++)assert(id!=removed[j]);}
  for(unsigned j=0;j<4;j++) {fish_economy_t saved=g.economy;assert(fish_shop_trade(&g,removed[j])==FISH_MERCHANT_EMPTY);assert(!memcmp(&saved,&g.economy,sizeof(saved)));}
  for(unsigned i=16;i<=18;i++) {assert(fish_shop_trade(&g,i)==FISH_MERCHANT_BOUGHT);assert(g.economy.bait_stock[6+i-16]==5);assert(g.bait_index==6+i-16);}
@@ -33,7 +33,7 @@ int main(void)
  for(unsigned j=0;j<4;j++)assert(fish_shop_trade(&g,removed[j])==FISH_MERCHANT_BOUGHT);
  assert(fish_shop_trade(&g,16)==FISH_MERCHANT_EMPTY && fish_shop_trade(&g,19)==FISH_MERCHANT_EMPTY);
  for(unsigned i=0;i<fish_shop_count(&g);i++)assert(fish_shop_position(&g,fish_shop_item_at(&g,i))==i);
- start(&g,FISH_VENDOR_CONVENIENCE);assert(fish_shop_count(&g)==2 && fish_shop_item_at(&g,0)==19 && fish_shop_item_at(&g,1)==15);
+ start(&g,FISH_VENDOR_CONVENIENCE);assert(fish_shop_count(&g)==4 && fish_shop_item_at(&g,0)==19 && fish_shop_item_at(&g,1)==FISH_SHOP_NOODLES && fish_shop_item_at(&g,2)==FISH_SHOP_UMBRELLA && fish_shop_item_at(&g,3)==15);
  fish_hold_add(&g.economy,0,200,100);unsigned value=fish_hold_value(&g.economy);assert(fish_shop_trade(&g,0)==FISH_MERCHANT_EMPTY && fish_hold_value(&g.economy)==value);
  assert(fish_shop_trade(&g,19)==FISH_MERCHANT_LATTE && g.latte_remaining_ms==360000 && g.economy.coins==9965 && g.save_requested);
  g.merchant_reply=FISH_MERCHANT_LATTE;assert(fish_merchant_pose(&g)==4 && strstr(fish_merchant_says(&g),"烫"));

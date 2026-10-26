@@ -107,6 +107,19 @@ set_source_files_properties(${FISH_CRYPTO_SOURCES}
     lcd/fatfs/ffunicode.c lcd/fatfs/diskio.c lcd/fatfs/spi_sd/hpm_spi_sd_disk.c
     PROPERTIES COMPILE_OPTIONS "-Os")
 set_source_files_properties(src/fish/fish_scene.c PROPERTIES COMPILE_OPTIONS "-Os")
+# Keep encoder dispatch and application setup compact as loss feedback grows.
+# These wrappers do not contain Arm-2D pixel kernels.
+set_source_files_properties(src/fish/fish_hpm_input.c src/main.c src/scene/scene_app.c
+    src/key_module/key_module.c ../common/beep_control/beep_control.c
+    PROPERTIES COMPILE_OPTIONS "-Os")
+# Event dispatch is control flow, not a pixel kernel; keep it compact as the
+# city equipment catalog grows. Arm-2D rendering kernels remain at -O3.
+file(GLOB FISH_EVENT_FRONTENDS ../external/notGUIyet/common/message/msg_frontend/*.c)
+set_source_files_properties(${FISH_EVENT_FRONTENDS} PROPERTIES COMPILE_OPTIONS "-Os")
+set_source_files_properties(../common/lcd/reference_gui/ref_gui.c
+    ../external/Arm-2D/Helper/Source/arm_2d_helper_scene.c
+    ../external/Arm-2D/Helper/Source/arm_2d_helper_font.c
+    PROPERTIES COMPILE_OPTIONS "-Os")
 set_source_files_properties(
     ${HPM_SDK_BASE}/middleware/cherryusb/core/usbd_core.c
     ${HPM_SDK_BASE}/middleware/cherryusb/port/hpmicro/usb_dc_hpm.c

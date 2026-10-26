@@ -17,6 +17,7 @@
 #include "assets/shop/interior_indexed.h"
 #include "assets/shop/list/list_goods.h"
 #include "assets/city_vendor_indexed.h"
+#include "assets/comforts_art.h"
 #include "assets/player/shore_player_art.h"
 #include "fish_scene_layout.h"
 #include "fish_shop_layout.h"
@@ -627,6 +628,8 @@ static void shore_player(const arm_2d_tile_t *tile,const fish_game_t *game)
     arm_2d_point_float_t centre={x-(game->facing<0),y-16};
     arm_2dp_tile_transform_xy((arm_2d_op_trans_t *)&scene.shore_player_operation,tile,NULL,&centre);
     ARM_2D_OP_WAIT_ASYNC(&scene.shore_player_operation);
+    if(game->comforts&FISH_COMFORT_UMBRELLA)
+        vendor_image(tile,&fish_image_Umbrella,x+game->facing*7-24,y-66,0);
 }
 static void night_road(const arm_2d_tile_t *tile,const fish_game_t *g)
 {
@@ -736,6 +739,8 @@ static void fisherman(const arm_2d_tile_t *tile, const fish_game_t *game)
     int x=game->boat_x-fish_game_camera(game);
     int bob=(game->now/450)%4; bob=bob==3?1:bob;
     int y=water_y(game)+bob;
+    if((game->comforts&FISH_COMFORT_UMBRELLA) && !fish_game_ashore(game))
+        vendor_image(tile,&fish_image_Umbrella,x-38,y-50,0);
     if (fish_game_ashore(game)) {
         arm_2d_region_t hull_region={.tLocation={0,25},.tSize={64,11}};
         arm_2d_tile_t hull,mask;
@@ -751,6 +756,7 @@ static void fisherman(const arm_2d_tile_t *tile, const fish_game_t *game)
     int rodx=x+game->facing*10, rody=y-7;
     int tipx=x+game->facing*(game->mode==FISH_CHARGE ? -12 : 28);
     int tipy=y-(game->mode==FISH_CHARGE ? 43 : 35);
+    if(game->rod_index==FISH_LONG_ROD){tipx+=game->facing*(game->mode==FISH_CHARGE?-4:8);tipy-=9;}
     if (fish_game_burst_warning(game)) tipy-=2;
     unsigned loss_age=game->now-game->phase_at;
     if(game->mode==FISH_LOST && game->loss==FISH_LOSS_BREAK && loss_age<400)
@@ -859,13 +865,9 @@ static const char *control_hint(const fish_game_t *game)
             break;
         default: break;
     }
-    if(game->mode==FISH_LOST)
-        hint=game->loss==FISH_LOSS_BREAK?"线组已损坏":
-             game->loss==FISH_LOSS_SLACK?"脱钩了":
-             game->loss==FISH_LOSS_EARLY?"提早了":
-             game->loss==FISH_LOSS_MISSED?"错过了":"鱼逃走了";
-    if (game->mode==FISH_AIM && game->loss!=FISH_LOSS_NONE)
-        hint=game->loss==FISH_LOSS_BREAK?"线组已损坏":
+    if(game->mode==FISH_LOST || (game->mode==FISH_AIM && game->loss!=FISH_LOSS_NONE))
+        hint=game->line_bitten?"它咬断了线组":
+             game->loss==FISH_LOSS_BREAK?(game->line_damaged?"鱼跑了，得换副线了":"鱼跑了，再来一竿"):
              game->loss==FISH_LOSS_SLACK?"脱钩了":
              game->loss==FISH_LOSS_EARLY?"提早了":
              game->loss==FISH_LOSS_MISSED?"错过了":"鱼逃走了";
@@ -881,7 +883,7 @@ static const char *control_hint(const fish_game_t *game)
     }
     if (game->mode==FISH_WAIT && game->pending_species>=FISH_SPECIES_COUNT && game->now-game->phase_at>=2600)
         hint="这里暂时没鱼，短按收回";
-    if((game->mode==FISH_MOVE || game->mode==FISH_AIM) && !game->economy.lines)hint="线组已损坏，去商店更换";
+    if((game->mode==FISH_MOVE || game->mode==FISH_AIM) && !game->economy.lines)hint="没线用了，去店里补一副";
     return hint;
 }
 
@@ -922,15 +924,15 @@ static void coin_count(const arm_2d_tile_t *tile,int x,int y,uint32_t coins)
 
 /* Compact buff/debuff sockets: only the18px icon footprint is tinted. The
  * bottom bright area is the current value; the upper area shades the icon. */
-static void status_icon(const arm_2d_tile_t *tile,int x,int y,unsigned value,unsigned full,bool latte)
+static void status_icon(const arm_2d_tile_t *tile,int x,int y,unsigned value,unsigned full,unsigned item)
 {
     if(value>full)value=full;
     unsigned fill=(value*16+full-1)/full;
     opacity_box(tile,x,y,18,18,RGB(17,27,34),96);
-    uint16_t color=latte?RGB(147,102,47):RGB(41,123,151);
+    uint16_t color=item?RGB(147,102,47):RGB(41,123,151);
     if(fill)opacity_box(tile,x+1,y+17-(int)fill,16,(int)fill,color,192);
-    if(latte) {
-        const arm_2d_tile_t *icon=fish_shop_list_goods[FISH_SHOP_LATTE];
+    if(item) {
+        const arm_2d_tile_t *icon=fish_shop_list_goods[item];
         arm_2d_region_t region={.tLocation={x+1,y+1},.tSize={16,16}};
         arm_2d_rgb16_tile_copy_with_colour_keying(icon,tile,&region,icon->phwBuffer[0],ARM_2D_CP_MODE_COPY);
         ARM_2D_OP_WAIT_ASYNC();
@@ -976,7 +978,9 @@ static void hud(const arm_2d_tile_t *tile, const fish_scene_t *self)
         if(game->wetness_units || fish_weather_rain(game)) {
             status_icon(tile,x,y,game->wetness_units,FISH_WETNESS_FULL,false);x+=22;
         }
-        if(game->latte_remaining_ms)status_icon(tile,x,y,game->latte_remaining_ms,FISH_LATTE_DURATION_MS,true);
+        if(game->latte_remaining_ms)status_icon(tile,x,y,game->latte_remaining_ms,
+            game->comforts&FISH_COMFORT_NOODLES?FISH_NOODLES_DURATION_MS:FISH_LATTE_DURATION_MS,
+            game->comforts&FISH_COMFORT_NOODLES?FISH_SHOP_NOODLES:FISH_SHOP_LATTE);
     }
     box(tile,0,header_height-1,240,1,game->mode==FISH_BAG?RPG_BRASS:HILL);
     box(tile,0,203,240,37,game->mode==FISH_BAG?RPG_DARK:INK);
@@ -1054,7 +1058,7 @@ static const char *bag_value(const fish_game_t *g,unsigned item,char *scratch,si
     switch (item) {
         case FISH_BAG_ROD:return fish_rods[g->rod_index].name;
         case FISH_BAG_LINE: {
-            if(!g->economy.lines)return "线组已损坏";
+            if(!g->economy.lines)return "没线用了";
             unsigned cm=fish_line_sets[g->line_index].distance_limit_cm;
             snprintf(scratch,length,"%s %u.%u米",fish_line_sets[g->line_index].name,cm/100,cm%100/10);return scratch;
         }
@@ -1158,7 +1162,7 @@ static void bag_panel(const arm_2d_tile_t *tile,const fish_scene_t *self)
         }
     }
     chinese_text_tinted(tile,72,42,fish_rods[g->rod_index].name,self->bag_names[FISH_BAG_ROD],RPG_LIGHT,RPG_DARK);
-    const fish_ui_art_t *rod=&fish_equipment_art[g->rod_index];
+    const fish_ui_art_t *rod=&fish_equipment_art[g->rod_index==FISH_LONG_ROD?2:g->rod_index];
     scaled_species_bitmap(tile,rod->sprite,rod->mask,72,101,false,512,
         (arm_2d_op_trans_msk_t *)&self->portrait_operation);
     box(tile,76,146,156,33,RPG_DARK);
@@ -1225,7 +1229,8 @@ static void shop_panel(const arm_2d_tile_t *tile,const fish_scene_t *self)
     box(tile,0,28,240,21,RPG_DARK);caption(tile,120,29,fish_merchant_says(g),RPG_LIGHT,RPG_DARK);
     box(tile,0,163,240,57,RPG_DARK);box(tile,7,163,226,1,RPG_BRASS);
     box(tile,8,170,48,46,RGB(35,30,25));
-    if(fish_shop_list_goods[item]) {
+    if(item==FISH_SHOP_UMBRELLA)vendor_view(tile,&fish_image_Umbrella,18,174,14,18,0);
+    else if(fish_shop_list_goods[item]) {
         arm_2d_point_float_t icon_centre={32,193};
         arm_2dp_tile_transform_xy((arm_2d_op_trans_t *)&self->shop_detail_operation,tile,NULL,&icon_centre);
         ARM_2D_OP_WAIT_ASYNC(&self->shop_detail_operation);
@@ -1238,6 +1243,7 @@ static void shop_panel(const arm_2d_tile_t *tile,const fish_scene_t *self)
     if(item==0) snprintf(label,sizeof(label),"+%lu金币",(unsigned long)fish_hold_value(&g->economy));
     else if(kind==FISH_SHOP_BAIT) snprintf(label,sizeof(label),"%lu金币/5份",(unsigned long)fish_shop_price(item));
     else if(kind==FISH_SHOP_DRINK) snprintf(label,sizeof(label),"%lu金币",(unsigned long)fish_shop_price(item));
+    else if(kind==FISH_SHOP_UTILITY)snprintf(label,sizeof(label),"%lu金币%s",(unsigned long)fish_shop_price(item),(g->comforts&FISH_COMFORT_UMBRELLA)?" 已拥有":"");
     else if(item==3 && fish_shop_free_line(g))snprintf(label,sizeof(label),"免费补给");
     else if(kind<FISH_SHOP_BAIT) snprintf(label,sizeof(label),"%lu金币%s",(unsigned long)fish_shop_price(item),
         fish_equipment_owned(&g->economy,kind,index)?" 已拥有":"");
@@ -1257,11 +1263,13 @@ static void shop_panel(const arm_2d_tile_t *tile,const fish_scene_t *self)
     else if(kind==FISH_SHOP_LINE) snprintf(detail,sizeof(detail),"线径0.%02u毫米 隐蔽%s",fish_line_sets[index].diameter_hundredths_mm,
         fish_line_sets[index].bite_percent[0]>=90?"高":"低");
     else if(kind==FISH_SHOP_CONTAINER) description="扩容并保留原有鱼获";
-    else if(kind==FISH_SHOP_DRINK) description="收放线和提竿窗口+10%";
+    else if(kind==FISH_SHOP_DRINK)description=index?"收放线速度+10%":"收放线和提竿窗口+10%";
+    else if(kind==FISH_SHOP_UTILITY)description="岸上手持，上船固定";
     else description=item==0?"出售容器内和船尾鱼获":item==FISH_SHOP_CARGO?"查看容器内和船尾鱼获":"回到岸边继续垂钓";
     caption(tile,148,181,description,RPG_LIGHT,RPG_DARK);
     if(kind==FISH_SHOP_ROD) {
-        snprintf(detail,sizeof(detail),"抛距%u像素 收线%u%%",fish_rods[index].max_cast_px,fish_rods[index].reel_percent);
+        unsigned cm=fish_rods[index].max_cast_px*FISH_WORLD_CM_PER_PIXEL;
+        snprintf(detail,sizeof(detail),"抛距%u.%u米 收线%u%%",cm/100,cm%100/10,fish_rods[index].reel_percent);
         caption(tile,148,200,detail,SUN,RPG_DARK);
     } else {
         const char *effect=detail;
@@ -1274,10 +1282,10 @@ static void shop_panel(const arm_2d_tile_t *tile,const fish_scene_t *self)
             snprintf(detail,sizeof(detail),"线长%u.%u米 强%u 窗%u%%",cm/100,cm%100/10,fish_line_sets[index].strength,fish_line_sets[index].strike_window_percent);
         }
         else if(kind==FISH_SHOP_DRINK) {
-            unsigned minutes=(g->latte_remaining_ms+999)/1000;
-            if(minutes)snprintf(detail,sizeof(detail),"剩余%u:%02u 再饮刷新6时",minutes/60,minutes%60);
-            else snprintf(detail,sizeof(detail),"持续6小时 买后即饮");
+            unsigned hours=index?4:6;
+            snprintf(detail,sizeof(detail),"持续%u小时 同类不叠加",hours);
         }
+        else if(kind==FISH_SHOP_UTILITY)effect="挡雨防湿 永久使用";
         else if(kind==FISH_SHOP_BAIT) snprintf(detail,sizeof(detail),"库存%u份 每包5份",g->economy.bait_stock[index]);
         else if(kind==FISH_SHOP_CONTAINER) snprintf(detail,sizeof(detail),"容量%lu kg",(unsigned long)fish_containers[index].capacity_g/1000);
         else if(item==FISH_SHOP_BACK) effect="短按返回岸边";
@@ -1697,7 +1705,7 @@ static void media_page(const arm_2d_tile_t *tile,fish_media_status_t status)
         box(tile,0,0,240,240,INK);
         bool checking=state==FISH_MEDIA_CHECK || state==FISH_MEDIA_VERIFY || state==FISH_MEDIA_SETTLE;
         caption(tile,120,25,state==FISH_MEDIA_FAULT?"上次为看门狗重启":checking?"正在检查资源包":status.receiving?"正在接收资源":"需要游戏资源",CREAM,INK);
-        caption(tile,120,52,"版本 " FISH_ASSET_VERSION " D12",SUN,INK);
+        caption(tile,120,52,"版本 " FISH_ASSET_VERSION " D14",SUN,INK);
         char label[64];
         if(state==FISH_MEDIA_FAULT) {
             snprintf(label,sizeof(label),"S%02u  %08lx",status.reset_stage,(unsigned long)status.fault.detail);
@@ -1813,7 +1821,7 @@ static void frame_start(arm_2d_scene_t *s)
         }
         arm_2dp_rgb565_tile_transform_xy_only_prepare(&self->backpack_operation,&c_tileBackpackOpenRGB565,
             (arm_2d_point_float_t){60.0f,44.0f},0.0f,2.0f,2.0f);
-        const fish_ui_art_t *rod=&fish_equipment_art[game->rod_index];
+        const fish_ui_art_t *rod=&fish_equipment_art[game->rod_index==FISH_LONG_ROD?2:game->rod_index];
         arm_2d_point_float_t pivot={12.0f,19.0f};
         arm_2d_err_t result=arm_2dp_rgb565_tile_transform_xy_with_src_mask_prepare(
             &self->portrait_operation,rod->sprite,rod->mask,pivot,0.0f,2.0f,2.0f);
