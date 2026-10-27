@@ -7,7 +7,7 @@ int fish_storage_begin(unsigned s,const uint8_t *p,size_t n){(void)s;(void)p;(vo
 int fish_storage_poll(void){return 0;}
 static void fight(fish_game_t *g,unsigned line,unsigned owned)
 {
- fish_game_init(g,0);g->economy.lines=(uint8_t)owned;fish_game_equip_line(g,line);
+ fish_game_init(g,0);g->rod_index=1;g->economy.rods|=2;g->economy.lines=(uint8_t)owned;fish_game_equip_line(g,line);
  g->mode=FISH_FIGHT;g->pending_species=1;g->pending_weight_g=13000;
  g->base_pull=40;g->stamina=g->stamina_max=1000;g->tension=g->line_strength;
 }
@@ -33,7 +33,7 @@ int main(void)
  assert(fish_shop_price(3)==120 && fish_shop_price(FISH_SHOP_STANDARD_LINE)==200 && fish_shop_price(4)==450);
  assert(fish_shop_price(FISH_SHOP_PE_LINE)==600 && fish_line_sets[FISH_PE_LINE].strength>fish_line_sets[2].strength);
  /* City-only sale; ownership and equipment survive the existing save schema. */
- fish_game_init(&g,0);g.game_minute=720;g.economy.coins=600;
+ fish_game_init(&g,0);g.rod_index=1;g.economy.rods|=2;g.game_minute=720;g.economy.coins=600;
  assert(fish_shop_trade(&g,FISH_SHOP_PE_LINE)==FISH_MERCHANT_EMPTY);
  g.map_index=1;assert(fish_shop_trade(&g,FISH_SHOP_PE_LINE)==FISH_MERCHANT_BOUGHT && g.line_index==FISH_PE_LINE && !g.economy.coins);
  fish_save_pack(&g,payload);fish_game_init(&loaded,0);assert(fish_save_unpack(&loaded,payload) && loaded.line_index==FISH_PE_LINE && (loaded.economy.lines&8));
@@ -45,7 +45,7 @@ int main(void)
  assert(small[1]>small[0]*2 && big[1]<big[0]);
  unsigned small_catches[2]={0};uint64_t waits[2]={0};
  for(unsigned n=1;n<=10000;n++)for(unsigned line=0;line<2;line++) {
-  fish_game_init(&g,0);g.map_index=1;g.boat_x=480;g.depth_index=0;g.random_state=n*0x9e3779b9u;
+  fish_game_init(&g,0);g.rod_index=1;g.economy.rods|=2;g.map_index=1;g.boat_x=480;g.depth_index=0;g.random_state=n*0x9e3779b9u;
   fish_game_equip_line(&g,line?FISH_PE_LINE:2);g.economy.lines|=(uint8_t)(1u<<g.line_index);
   fish_game_input(&g,FISH_PRESS,0,0);fish_game_input(&g,FISH_RELEASE,0,1500);
   assert(g.mode==FISH_CAST && g.pending_species<FISH_SPECIES_COUNT);

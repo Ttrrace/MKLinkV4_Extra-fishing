@@ -25,7 +25,7 @@
   ],
   "container_purchase": "replace with higher tier; transfer existing tail fish if remaining room fits",
   "shop_layout": "shop_layout.json",
-  "overflow": "release; guide record still counts",
+  "overflow": "Store if remaining room fits. Otherwise a fish above10kg may use one empty stern slot, even below an upgraded container total capacity; release only if neither route applies.",
   "price_formula": "max(1, round(base * size_mm^2 / (mean_x2_mm/2)^2))",
   "base_prices": {
     "crucian": 8,
@@ -131,5 +131,11 @@
     ],
     "hint_zh": "它咬断了线组",
     "consume_rigs_at_most": 1
-  }
+  },
+  "lifelike_lure": {
+    "price": 600,
+    "consumable": false,
+    "ownership": "Existing positive stock stays owned; one purchase unlocks, duplicate purchases do not charge."
+  },
+  "rod_line_compatibility": "Bamboo rod supports fine/general rigs only. Strong/heavy and8-carrier PE rigs require fiberglass or better. Preserve ownership and choose an owned compatible rig for legacy bamboo combinations."
 }

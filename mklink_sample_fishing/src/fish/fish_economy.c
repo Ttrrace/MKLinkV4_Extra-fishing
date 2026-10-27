@@ -12,12 +12,12 @@ typedef struct {uint8_t slot,index;uint16_t price;} shop_item_t;
 /* sell, rods, lines, floats, five packs of bait, return */
 static const shop_item_t items[FISH_SHOP_COUNT]={
     {5,0,0},{0,1,550},{0,2,1800},{1,0,120},{1,2,450},{2,1,90},{2,2,120},
-    {3,0,8},{3,1,6},{3,2,10},{3,3,18},{3,4,20},{4,1,0},{4,2,0},{5,1,0},{5,2,0},{3,6,30},{3,7,24},{3,8,65},{6,0,35},{1,1,200},{1,3,600},
-    {0,FISH_LONG_ROD,3500},{FISH_SHOP_UTILITY,0,160},{FISH_SHOP_DRINK,1,28}};
+    {3,0,8},{3,1,6},{3,2,10},{3,3,18},{3,4,20},{4,1,0},{4,2,0},{5,1,0},{5,2,0},{3,6,30},{3,7,24},{3,8,600},{6,0,35},{1,1,200},{1,3,600},
+    {0,FISH_LONG_ROD,3500},{FISH_SHOP_UTILITY,0,160},{FISH_SHOP_DRINK,1,28},{FISH_SHOP_FOOD,0,25}};
 /* Stable item IDs are saved/tested independently of each vendor's order. */
 static const uint8_t wetland_tackle[]={0,1,2,3,20,4,5,6,7,8,9,10,11,12,13,14,15};
 static const uint8_t city_tackle[]={0,1,2,22,3,20,4,21,6,10,11,16,17,18,12,13,14,15};
-static const uint8_t convenience[]={19,24,23,15};
+static const uint8_t convenience[]={19,24,23,25,15};
 unsigned fish_shop_count(const struct fish_game *g)
 {return !g->map_index?FISH_WETLAND_SHOP_COUNT:g->shop_venue==FISH_VENDOR_CONVENIENCE?sizeof(convenience):sizeof(city_tackle);}
 unsigned fish_shop_item_at(const struct fish_game *g,unsigned position)
@@ -77,13 +77,16 @@ fish_cargo_result_t fish_hold_add_on(fish_economy_t *e,unsigned map,unsigned spe
 {
     if(species>=FISH_SPECIES_COUNT || !grams) return FISH_RELEASED;
     uint32_t price=fish_catch_price_on(map,species,size_mm);
-    uint32_t capacity=fish_hold_capacity(e);
-    if(grams>capacity) {
-        if(e->hanging_species<FISH_SPECIES_COUNT) return FISH_RELEASED;
+    uint32_t capacity=fish_hold_capacity(e),used=fish_hold_weight(e);
+    if(used>capacity)return FISH_RELEASED;
+    if(grams>capacity-used) {
+        /* An upgraded container's remaining room decides whether to use the
+         * empty stern slot for a >10kg fish, not its empty-container capacity. */
+        if(grams<=FISH_HOLD_CAPACITY_G || e->hanging_species<FISH_SPECIES_COUNT) return FISH_RELEASED;
         e->hanging_species=(uint8_t)species;e->hanging_map=(uint8_t)map;e->hanging_size_mm=size_mm;
         e->hanging_grams=grams;e->hanging_value=price;return FISH_HANGING;
     }
-    if(grams>capacity-fish_hold_weight(e) || e->count[species]==UINT16_MAX) return FISH_RELEASED;
+    if(e->count[species]==UINT16_MAX) return FISH_RELEASED;
     ++e->count[species];e->grams[species]+=grams;e->value[species]+=price;
     for(unsigned i=0;i<FISH_PRICE_GROUPS;i++) if(!e->prices[i].count || e->prices[i].price==price) {
         if(price<=UINT16_MAX && e->prices[i].count<UINT16_MAX) {
@@ -98,8 +101,8 @@ bool fish_equipment_owned(const fish_economy_t *e,unsigned slot,unsigned index)
     if(slot==FISH_BAG_ROD) return index<FISH_ROD_COUNT && (e->rods&(1u<<index));
     if(slot==FISH_BAG_LINE) return index<FISH_LINE_COUNT && (e->lines&(1u<<index));
     if(slot==FISH_BAG_FLOAT) return index<FISH_FLOAT_COUNT && (e->floats&(1u<<index));
-    if(slot==FISH_BAG_BAIT) return index==FISH_PLASTIC_BAIT || (fish_bait_consumable(index) && e->bait_stock[index]);
-    return slot==FISH_BAG_DEPTH && index<FISH_DEPTH_OPTION_COUNT;
+    if(slot==FISH_BAG_BAIT) return index==FISH_PLASTIC_BAIT || (index<FISH_BAIT_COUNT && e->bait_stock[index]);
+    return slot==FISH_BAG_DEPTH && (index==0 || index==1 || index==FISH_DEPTH_OPTION_COUNT-1);
 }
 const char *fish_shop_name(unsigned item)
 {
@@ -112,6 +115,7 @@ const char *fish_shop_name(unsigned item)
     if(s->slot==4) return fish_containers[s->index].name;
     if(s->slot==FISH_SHOP_DRINK) return s->index?"泡面":"热拿铁";
     if(s->slot==FISH_SHOP_UTILITY) return "雨伞";
+    if(s->slot==FISH_SHOP_FOOD)return "鱼罐头";
     return s->index==0?"出售全部鱼获":s->index==1?"查看容器":"返回小径";
 }
 uint32_t fish_shop_price(unsigned item)
@@ -175,7 +179,9 @@ fish_merchant_reply_t fish_shop_trade(struct fish_game *g,unsigned item)
     if(s->slot==FISH_SHOP_SERVICE) return FISH_MERCHANT_EMPTY;
     if(s->slot<3 && fish_equipment_owned(e,s->slot,s->index)) return FISH_MERCHANT_OWNED;
     if(s->slot==FISH_SHOP_UTILITY && (g->comforts&FISH_COMFORT_UMBRELLA))return FISH_MERCHANT_OWNED;
-    if(s->slot==3 && e->bait_stock[s->index]>FISH_BAIT_STOCK_LIMIT-5) return FISH_MERCHANT_FULL;
+    if(s->slot==FISH_SHOP_FOOD && g->cat.tins>=FISH_CAT_FOOD_LIMIT)return FISH_MERCHANT_FULL;
+    if(s->slot==3 && !fish_bait_consumable(s->index) && e->bait_stock[s->index])return FISH_MERCHANT_OWNED;
+    if(s->slot==3 && fish_bait_consumable(s->index) && e->bait_stock[s->index]>FISH_BAIT_STOCK_LIMIT-5) return FISH_MERCHANT_FULL;
     if(s->slot==4 && e->container>=s->index) return FISH_MERCHANT_OWNED;
     bool relief=item==3 && fish_shop_free_line(g);
     uint32_t price=relief?0:fish_shop_price(item);
@@ -183,10 +189,11 @@ fish_merchant_reply_t fish_shop_trade(struct fish_game *g,unsigned item)
     e->coins-=price;
     money_popup(g,-(int32_t)price,false);
     if(s->slot==0) {e->rods|=(uint8_t)(1u<<s->index);g->rod_index=s->index;}
-    else if(s->slot==1) {e->lines|=(uint8_t)(1u<<s->index);fish_game_equip_line(g,s->index);}
+    else if(s->slot==1) {e->lines|=(uint8_t)(1u<<s->index);if(fish_tackle_compatible(g->rod_index,s->index))fish_game_equip_line(g,s->index);}
     else if(s->slot==2) {e->floats|=(uint8_t)(1u<<s->index);g->float_index=s->index;}
-    else if(s->slot==3) {e->bait_stock[s->index]+=5;g->bait_index=s->index;}
+    else if(s->slot==3) {if(fish_bait_consumable(s->index))e->bait_stock[s->index]+=5;else e->bait_stock[s->index]=1;g->bait_index=s->index;}
     else if(s->slot==FISH_SHOP_UTILITY)g->comforts|=FISH_COMFORT_UMBRELLA;
+    else if(s->slot==FISH_SHOP_FOOD)++g->cat.tins;
     else if(s->slot==FISH_SHOP_DRINK) {
         g->comforts=(uint8_t)((g->comforts&~FISH_COMFORT_NOODLES)|(s->index?FISH_COMFORT_NOODLES:0));
         g->latte_remaining_ms=s->index?FISH_NOODLES_DURATION_MS:FISH_LATTE_DURATION_MS;

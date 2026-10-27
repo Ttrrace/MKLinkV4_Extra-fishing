@@ -203,5 +203,17 @@
     1200,
     65535
   ],
-  "city_depth_note": "宽河道虚拟剖面：硬质近岸3–4米，江心16米；保留湿地原地形。"
+  "city_depth_note": "宽河道虚拟剖面：硬质近岸3–4米，江心16米；保留湿地原地形。",
+  "middle_option": 65534,
+  "depth_menu_indices": [
+    7,
+    0,
+    1
+  ],
+  "depth_menu_names_zh": [
+    "钓底",
+    "顶层",
+    "中层"
+  ],
+  "depth_mode_note": "Keep historical0..7 save IDs:0=surface,7=bottom,all other old fixed-depth IDs now resolve to half the local water depth; only7/0/1 are selectable."
 }

@@ -10,6 +10,7 @@ unsigned fish_guide_position(unsigned index);
 static inline bool fish_species_is_variant(unsigned index) {return index>=11 && index<15;}
 unsigned fish_species_parent(unsigned index);
 unsigned fish_species_special_roll(uint32_t *random_state,unsigned index);
+unsigned fish_species_special_roll_cat(uint32_t *random_state,unsigned index);
 uint32_t fish_random_next(uint32_t *random_state);
 typedef enum { FISH_RARITY_BRONZE, FISH_RARITY_SILVER, FISH_RARITY_GOLD, FISH_RARITY_COUNT } fish_rarity_t;
 typedef enum { FISH_SIZE_TOTAL_LENGTH, FISH_SIZE_CARAPACE_LENGTH, FISH_SIZE_CARAPACE_WIDTH } fish_size_metric_t;

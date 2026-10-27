@@ -59,9 +59,8 @@
       "id": "lifelike_lure",
       "index": 8,
       "name_zh": "栩栩如生的假饵",
-      "short_description_zh": "大掠食者的心头好",
-      "description_zh": "偏向肉食鱼，并更容易遇见其中较大的个体。每次抛竿消耗一份，不保证巨物。",
-      "price_per_5": 65,
+      "short_description_zh": "他的饵比我的鱼都大",
+      "description_zh": "可重复使用的拟真假饵，吸引肉食鱼和较大个体，不保证巨物。",
       "wetland_weights": [
         0,
         0,
@@ -80,7 +79,9 @@
         "20": 5,
         "22": 7,
         "23": 3
-      }
+      },
+      "price": 600,
+      "consumable": false
     }
   ],
   "latte": {

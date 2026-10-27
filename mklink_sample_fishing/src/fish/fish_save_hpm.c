@@ -29,7 +29,9 @@ unsigned fish_storage_write_diagnostic(void) {return spi_sd_write_diagnostic();}
 static int failed(unsigned stage,FRESULT result) {diagnostic=(stage<<8)|(unsigned)result;return -1;}
 extern int64_t get_system_time_ms(void);
 #define SAVE_DIRECTORY "3:/FishingGame_Saves_DO_NOT_DELETE"
-static const char *paths[]={SAVE_DIRECTORY "/NorthWetland_V14_Save_A_DO_NOT_DELETE.sav",
+static const char *paths[]={SAVE_DIRECTORY "/NorthWetland_V16_Save_A_DO_NOT_DELETE.sav",
+    SAVE_DIRECTORY "/NorthWetland_V16_Save_B_DO_NOT_DELETE.sav",SAVE_DIRECTORY "/NorthWetland_V15_Save_A_DO_NOT_DELETE.sav",
+    SAVE_DIRECTORY "/NorthWetland_V15_Save_B_DO_NOT_DELETE.sav",SAVE_DIRECTORY "/NorthWetland_V14_Save_A_DO_NOT_DELETE.sav",
     SAVE_DIRECTORY "/NorthWetland_V14_Save_B_DO_NOT_DELETE.sav",
     SAVE_DIRECTORY "/NorthWetland_V13_Save_A_DO_NOT_DELETE.sav",
     SAVE_DIRECTORY "/NorthWetland_V13_Save_B_DO_NOT_DELETE.sav",
@@ -110,9 +112,9 @@ int fish_storage_init(uint8_t key[32])
     FRESULT made=f_mkdir(SAVE_DIRECTORY);if(made!=FR_OK && made!=FR_EXIST) {fish_fs_unlock();return failed(3,made);}
     /* A visible, human-readable ownership note; never replace an existing note. */
     FIL note;
-    if(f_open(&note,SAVE_DIRECTORY "/README_V14_DO_NOT_DELETE.txt",FA_WRITE|FA_CREATE_NEW)==FR_OK) {
+    if(f_open(&note,SAVE_DIRECTORY "/README_V16_DO_NOT_DELETE.txt",FA_WRITE|FA_CREATE_NEW)==FR_OK) {
         static const char info[]="钓鱼游戏存档，请勿删除。\r\n"
-            "V14_A/B为本版，旧版本请一并保留。不要格式化SD。\r\n"
+            "V16_A/B为本版，旧版本请一并保留。不要格式化SD。\r\n"
             "备份整个目录，仅恢复至同一板卡。\r\n"
             "Fishing saves: keep all versions. Back up this folder; restore on the same board. Never format SD.\r\n";
         UINT count;f_write(&note,info,sizeof(info)-1,&count);f_sync(&note);f_close(&note);

@@ -91,6 +91,10 @@ int main(void)
     fish_game_input(&g,FISH_ROTATE,1,13);assert(g.sound_mode==FISH_SOUND_FISH);
     fish_game_input(&g,FISH_PRESS,0,14);fish_game_input(&g,FISH_RELEASE,0,15);
     assert(!g.bag_editing && g.save_requested && g.mode==FISH_BAG);
-    puts("PASS: gameplay, bag order and sound editing/save request");
+    for(unsigned day=0;day<96;day++) {
+        g.weather_ms=day*1440000u;assert(fish_game_moon_phase(&g)==(day/3+1)%8);
+    }
+    g.weather_ms=0;assert(fish_game_moon_phase(&g)==1);
+    puts("PASS: gameplay, bag order, sound editing/save request and96-day moon continuity");
     return 0;
 }

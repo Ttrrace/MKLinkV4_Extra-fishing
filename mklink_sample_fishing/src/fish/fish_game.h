@@ -7,13 +7,14 @@
 #include "fish_map.h"
 #include "fish_equipment.h"
 #include "fish_economy.h"
+#include "fish_cat.h"
 
 enum { FISH_WORLD_WIDTH = FISH_MAP_WIDTH, FISH_HOLD_MS = 280, FISH_GUIDE_HOLD_MS=600, FISH_FULL_CHARGE_MS = 1400,
        FISH_WORLD_CM_PER_PIXEL = 4, FISH_LOSS_ANIMATION_MS = 1200,
        FISH_LINE_DAMAGE_PERCENT = 10, FISH_PUFFER_BITE_PERCENT = 20 };
 typedef enum { FISH_MOVE, FISH_AIM, FISH_CHARGE, FISH_CAST,
                FISH_WAIT, FISH_BITE, FISH_FIGHT, FISH_CAUGHT, FISH_GUIDE,
-               FISH_BAG, FISH_SHORE, FISH_LOST, FISH_SHOP, FISH_HOLD, FISH_ROUTE, FISH_LOADING } fish_mode_t;
+               FISH_BAG, FISH_SHORE, FISH_LOST, FISH_SHOP, FISH_HOLD, FISH_ROUTE, FISH_LOADING,FISH_CAT } fish_mode_t;
 enum {FISH_BAG_ROD,FISH_BAG_LINE,FISH_BAG_FLOAT,FISH_BAG_BAIT,FISH_BAG_DEPTH,FISH_BAG_MISC,
       FISH_BAG_DOCK,FISH_BAG_GUIDE,FISH_BAG_BACK,FISH_BAG_SAVE,FISH_BAG_SOUND,FISH_BAG_COUNT};
 enum {FISH_BAG_VISIBLE_COUNT=FISH_BAG_COUNT-1}; /* Dock ID reserved, no menu entry. */
@@ -38,7 +39,7 @@ typedef struct fish_game {
     int8_t boat_speed; /* -2/-1/0/+1/+2: two cruise gears and stop. */
     int16_t boat_motion_q8;
     int16_t shore_x;
-    int8_t shore_speed;
+    int8_t shore_speed; /* -2/-1/0/+1/+2: fast/slow walk and stop. */
     uint16_t shore_remainder;
     uint8_t shore_walk_phase;
     uint16_t cast_bottom_cm,cast_depth_cm;
@@ -72,6 +73,7 @@ typedef struct fish_game {
     uint16_t species_best_size_mm[FISH_SPECIES_COUNT];
     uint8_t species_best_map[FISH_SPECIES_COUNT],last_map;
     fish_economy_t economy;
+    fish_cat_t cat;
     fish_money_feedback_t money; /* Visual feedback only; never saved. */
     uint32_t clock_at;
     uint32_t latte_remaining_ms; /* One real second is one game minute; persists in V11. */
@@ -109,9 +111,13 @@ bool fish_game_at_station(const fish_game_t *g);
 bool fish_game_shop_open(const fish_game_t *g);
 bool fish_game_vendor_open(const fish_game_t *g,unsigned venue);
 unsigned fish_game_night_opacity(const fish_game_t *g);
+unsigned fish_game_moon_phase(const fish_game_t *g);
+bool fish_game_sheltered(const fish_game_t *g);
 int fish_game_dock_action(const fish_game_t *g);
 uint16_t fish_game_rig_depth(const fish_game_t *g);
 void fish_game_equip_line(fish_game_t *g,unsigned index);
+void fish_game_reconcile_tackle(fish_game_t *g);
+const char *fish_game_depth_name(const fish_game_t *g);
 int fish_game_pull(const fish_game_t *g, uint32_t elapsed_ms);
 void fish_game_float(const fish_game_t *g, int *dx, int *dy);
 int fish_game_distance(const fish_game_t *g);

@@ -1,10 +1,25 @@
 # MKLink V4 钓鱼 / North Wetland Fishing
 
-运行于 **MKLink V4（HPM5301）** 的240×240 RGB565像素钓鱼游戏，使用ST7789屏幕和一颗可双向旋转、按下的编码器。当前版本 **D14 / 2026-10-26**。本次源代码与固件已获作者授权上传；D13/D14新增功能尚待实机验证，D12曾获“基本稳定”的反馈。
+运行于 **MKLink V4（HPM5301）** 的240×240 RGB565像素钓鱼游戏，使用ST7789屏幕和一颗可双向旋转、按下的编码器。当前版本 **D16 / 2026-10-27**，包含D15全部更新；108项主机检查通过，新功能待实机确认。
 
-A240×240 RGB565 pixel fishing game for **MKLink V4 (HPM5301)**, using an ST7789 display and one rotary encoder with a push button. **D14 / 2026-10-26** is published with the author's approval. New D13/D14 features await device verification; the earlier basic-stability report applies to D12.
+A 240×240 RGB565 pixel fishing game for **MKLink V4 (HPM5301)** with an ST7789 screen and a single rotary encoder. Current release: **D16 / 2026-10-27**, including D15. All108 host checks pass; new features await device acceptance.
 
-## D14更新 / D14 changes
+## D16更新 / D16 changes
+
+- 都市便利店外加入流浪猫：抚摸+1、喂食+5，好感50跟船；每次见面最多3次互动、每天最多喂2次，罐头与小鱼共享。猫可跟随两图，符合条件的四种变异概率由1%升到2.5%。
+- 互动改为小选项框；岸边实际往返走动、坐下或蜷睡，靠近主角会停下转向。玩家在附近时保持有猫/没猫状态，离开视野后更新；本次状态与次数随存档保留。船上只坐或睡，配有zzz/爱心。
+- 24游戏日八阶段月相，保留原轨迹与山体遮挡；便利店屋檐、鱼摊棚下可遮雨并逐渐消退潮湿，打烊后仍有效。
+- 鱼罐头描述为“喵”；栩栩如生的假饵描述为“他的饵比我的鱼都大”，600G永久使用。
+- 修复储鱼箱空间不足时未使用空船尾位而放流大鱼；竹竿仅适配细线/通用线组；钓深只显示钓底、顶层、中层。包含商店滚轮反向与岸上两档快走。
+- 船猫坐位、人与猫之间的细伞杆、船尾鱼头系绳/部分入水与20～42像素鱼长调整。雨伞下雨自动展开，停雨收起。
+
+City cats gain friendship from petting/feeding and join at50, following both maps and raising eligible variants from1% to2.5%. Encounters allow three actions and two feeds daily, shared across cans and new small catches. A small menu leaves the scene visible; cats pace on shore and keep their visible/absent state until the player leaves. Boat idle poses are seated or asleep with zzz. Eight moon phases cycle over24 game days; city eaves and canopies shelter walkers even after closing. Cargo overflow, bamboo-rig restrictions, three depth choices, reusable600G lure, shop-wheel direction and two-speed shore walking are included. Stern fish, cat seating and the automatically opening umbrella have been refined.
+
+V16存档1511B，使用独立A/B文件并保留所有旧档。SD资源仍为2026.10.19.5，无需重拷。详见 [D16设定 / settings](docs/cat-ui-and-moon-d16.md)、[内存 / memory](docs/cat-ui-and-moon-d16-memory.md) 与 [核验 / evidence](docs/cat-ui-and-moon-d16-build-validation.json)。
+
+V16 remains1511bytes with separate A/B files and all older files retained. Existing2026.10.19.5 SD packs work unchanged. Source artwork and previews are excluded; only used C artwork and required SD packs are provided.
+
+## D14已发布基线 / Published D14 baseline
 
 - 都市鱼摊新增3500G高碳长竿，最大抛距7.2米、收线效率125%；6.5kg以上鱼每次收线有1点张力缓冲。500g以下小鱼在低张力时松线积累快50%，到1.5kg逐渐恢复正常，旧鱼竿仍适合近岸和小鱼。
 - 便利店新增160G永久雨伞，岸上手持、船上固定，阻止继续淋湿。泡面28G，持续4游戏小时，只提升收放线速度10%；热拿铁35G，持续6小时，收放线和提竿窗口各提升10%，后购买的替换前一个。
@@ -44,11 +59,11 @@ Rotate to move, browse or handle line; press to interact/confirm, hold and relea
 
 ## 存档与核验 / Saves and validation
 
-V14存档仍为1503B，沿用原密钥、设备UUID和目录，使用独立V14_A/B，读取并保留V1–V13旧档。保存位置、朝向、地图、时间、天气、潮湿、雨伞、泡面/拿铁、声音、装备、金币、图鉴及鱼获；启动加载资源后恢复位置，离线不推进时间。存档目录`FishingGame_Saves_DO_NOT_DELETE`建议整体备份。
+V16存档1511B，沿用原密钥、设备UUID和目录，独立V16 A/B文件读取并保留所有V1–V15旧档。保存位置、朝向、地图、时间、天气、潮湿、雨伞、泡面/拿铁、声音、装备、金币、图鉴、鱼获和猫状态；离线不推进时间。建议备份整个`FishingGame_Saves_DO_NOT_DELETE`目录。
 
-针对S08/01加入SD写入CRC16、延迟响应与有界忙等待，保留A/B、同步和回读验证，并补充S/W错误编号。75项主工程与28项独立demo检查通过，共103项；程序区余8,460B，DLM静态余3,824B，资源缓存余19,060B。新增内容尚待实机验证；掉电、拔卡、硬件堆峰值和栈水位未专项验收。
+108项主机检查通过（主工程78、独立demo30），覆盖真实PC文件和FatFs模型的A/B写入、回读、旧档迁移、下载器哨兵文件与卷引导扇区保留。两图各17页的主机Arm-2D临时申请均为0。实际余量见[D16内存报告](docs/cat-ui-and-moon-d16-memory.md)。没有烧录设备或操作实体SD；新功能的掉电、硬件堆峰值和栈水位仍需实机验收。
 
-V14 remains1503bytes and preserves original keys/UUID/path and all older files, including exact position, weather, new gear and refreshment state. All103 workspace checks pass (75 root and28 standalone), including probability/save regressions and scene hints. Device validation of the additions remains pending. See [validation](docs/validation.md), [current memory](docs/line-damage-d14-memory.md) and [D14 notes](docs/line-damage-d14.md).
+V16 preserves original keys, UUID, save directory and all older files. All108 host checks pass, including A/B recovery and V15 migration without modifying old files. Both maps' seventeen loaded pages use zero host Arm-2D scratch allocations. Physical-device power-loss behavior, heap peaks and stack watermarks remain unmeasured.
 
 ## 构建与工程 / Building
 

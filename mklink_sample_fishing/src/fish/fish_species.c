@@ -41,6 +41,12 @@ unsigned fish_species_special_roll(uint32_t *state,unsigned index)
     return index;
 }
 
+unsigned fish_species_special_roll_cat(uint32_t *state,unsigned index)
+{
+    for(unsigned v=FISH_BASE_SPECIES_COUNT;v<FISH_LEGACY_SPECIES_COUNT;v++)
+        if(fish_species_parent(v)==index)return next_random(state)%1000<25?v:index;
+    return index;
+}
 void fish_species_roll(uint32_t *state, uint8_t *index, uint16_t *size_mm)
 {
     unsigned total=0;

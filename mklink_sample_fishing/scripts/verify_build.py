@@ -78,7 +78,7 @@ paths=[(ide.parent/f.attrib['file_name'].replace('\\','/')).resolve() for f in t
 assert len(paths)==len(set(str(p).casefold() for p in paths)),'Duplicate SES sources'
 assert all(p.is_file() for p in paths)
 save_port=(demo/'src/fish/fish_save_hpm.c').read_text(encoding='utf-8')
-assert all(name in save_port for name in ('NorthWetland_V14_Save_A','NorthWetland_V14_Save_B','NorthWetland_V13_Save_A','NorthWetland_V13_Save_B','NorthWetland_V12_Save_A','NorthWetland_V12_Save_B','NorthWetland_V11_Save_A','NorthWetland_V11_Save_B','NorthWetland_V10_Save_A','NorthWetland_V10_Save_B','NorthWetland_V9_Save_A','NorthWetland_V9_Save_B','NorthWetland_V8_Save_A','NorthWetland_V8_Save_B','NorthWetland_V7_Save_A','NorthWetland_V7_Save_B','NorthWetland_V6_Save_A','NorthWetland_V6_Save_B','NorthWetland_V5_Save_A','NorthWetland_V5_Save_B','NorthWetland_Save_A','NorthWetland_Save_B')),'V9 through legacy save slots must coexist'
+assert all(name in save_port for name in ('NorthWetland_V16_Save_A','NorthWetland_V16_Save_B','NorthWetland_V15_Save_A','NorthWetland_V15_Save_B','NorthWetland_V14_Save_A','NorthWetland_V14_Save_B','NorthWetland_V13_Save_A','NorthWetland_V13_Save_B','NorthWetland_V12_Save_A','NorthWetland_V12_Save_B','NorthWetland_V11_Save_A','NorthWetland_V11_Save_B','NorthWetland_V10_Save_A','NorthWetland_V10_Save_B','NorthWetland_V9_Save_A','NorthWetland_V9_Save_B','NorthWetland_V8_Save_A','NorthWetland_V8_Save_B','NorthWetland_V7_Save_A','NorthWetland_V7_Save_B','NorthWetland_V6_Save_A','NorthWetland_V6_Save_B','NorthWetland_V5_Save_A','NorthWetland_V5_Save_B','NorthWetland_Save_A','NorthWetland_Save_B')),'V9 through legacy save slots must coexist'
 assert not any('mklink_sample_fire' in str(p) for p in paths),'Fire application leaked into fishing demo'
 for item in tree.iter('configuration'):
     for folder in item.attrib.get('c_user_include_directories','').split(';'):
@@ -86,7 +86,7 @@ for item in tree.iter('configuration'):
 gnu=elf_memory(build/'output/MicroLink.elf')
 assert next(r['free'] for r in gnu['regions'] if r['name']=='APP_FLASH')>=8192,'Keep 8 KiB of application headroom'
 app=(build/'output/MicroLink.app.bin').read_bytes()
-assert all(name.encode() in app for name in ('NorthWetland_V14_Save_A','NorthWetland_V14_Save_B','NorthWetland_V13_Save_A','NorthWetland_V13_Save_B','NorthWetland_V12_Save_A','NorthWetland_V12_Save_B','NorthWetland_V11_Save_A','NorthWetland_V11_Save_B','NorthWetland_V10_Save_A','NorthWetland_V10_Save_B','NorthWetland_V9_Save_A','NorthWetland_V9_Save_B','NorthWetland_V8_Save_A','NorthWetland_V8_Save_B','NorthWetland_V7_Save_A','NorthWetland_V7_Save_B','NorthWetland_V6_Save_A','NorthWetland_V6_Save_B','NorthWetland_V5_Save_A','NorthWetland_V5_Save_B')),'Built firmware must contain all current and legacy save paths'
+assert all(name.encode() in app for name in ('NorthWetland_V16_Save_A','NorthWetland_V16_Save_B','NorthWetland_V15_Save_A','NorthWetland_V15_Save_B','NorthWetland_V14_Save_A','NorthWetland_V14_Save_B','NorthWetland_V13_Save_A','NorthWetland_V13_Save_B','NorthWetland_V12_Save_A','NorthWetland_V12_Save_B','NorthWetland_V11_Save_A','NorthWetland_V11_Save_B','NorthWetland_V10_Save_A','NorthWetland_V10_Save_B','NorthWetland_V9_Save_A','NorthWetland_V9_Save_B','NorthWetland_V8_Save_A','NorthWetland_V8_Save_B','NorthWetland_V7_Save_A','NorthWetland_V7_Save_B','NorthWetland_V6_Save_A','NorthWetland_V6_Save_B','NorthWetland_V5_Save_A','NorthWetland_V5_Save_B')),'Built firmware must contain all current and legacy save paths'
 payload,count=uf2_payload(build/'output/MicroLink.fish.uf2')
 assert payload[:len(app)]==app and not any(payload[len(app):])
 assert len(app)==int(gnu['flash_end'],16)-0x80023000
@@ -125,7 +125,7 @@ report=dict(gnu=gnu,uf2_blocks=count,source_count=len(paths),uf2_base='0x8002300
     nor_configuration_instruction_sync=True,watchdog_reset_stage_best_effort=True,
     cache_crc_bytes_per_tick=16384,source_read_bytes_per_tick=4096,
     watchdog_reset_stage_bytes=28,watchdog_diagnostics_write_sd=False,
-    diagnostic_revision='D14',rain_duration_game_hours=[2,48],independent_regional_weather=True,near_rain_max_opacity=224,large_fish_landing_gate=False,line_break_destroys_current_rig=False,line_break_damage_percent=10,line_damage_roll_once_per_break=True,puffer_escape_bite_percent=20,puffer_bite_independent=True,puffer_double_rig_consumption=False,line_prices=[120,200,450,600],pe8_line_city_price=600,pe8_line_small_fish_filter=True,free_fine_rig_below_coins=120,free_fine_rig_requires_empty_cargo=False,city_extra_water_offset_px=8,shore_actor_scale=1.8,city_stall_screen_size=[100,76],city_outdoor_monger_behind_counter=True,city_dry_night_dawn_mist=True,rain_and_distant_fog=True,rain_bitmap_bytes=0,wetness_fill_game_minutes=60,wetness_dry_game_minutes=120,wetness_speed_loss_percent=20,cpu_fault_register_capture=True,diagnostic_pause_before_sd=True,
+    diagnostic_revision='D16',cat_small_popup=True,cat_no_visible_respawn=True,cat_stroll_span_px=56,moon_phases=8,moon_cycle_game_days=24,city_store_rain_shelter=True,city_stall_rain_shelter=True,cat_companion=True,cat_food_price=25,cat_feed_per_day=2,cat_actions_per_encounter=3,cat_friendship_to_join=50,cat_variant_per_mille=25,default_variant_per_mille=10,visible_depth_modes=3,legacy_depth_storage_ids=8,lifelike_lure_price=600,lifelike_lure_consumable=False,bamboo_max_line_index=1,stern_fallback_by_remaining_capacity=True,shop_wheel_direction=-1,shore_walk_speed_px_per_s=[32,64],shore_two_gears=True,rain_duration_game_hours=[2,48],independent_regional_weather=True,near_rain_max_opacity=224,large_fish_landing_gate=False,line_break_destroys_current_rig=False,line_break_damage_percent=10,line_damage_roll_once_per_break=True,puffer_escape_bite_percent=20,puffer_bite_independent=True,puffer_double_rig_consumption=False,line_prices=[120,200,450,600],pe8_line_city_price=600,pe8_line_small_fish_filter=True,free_fine_rig_below_coins=120,free_fine_rig_requires_empty_cargo=False,city_extra_water_offset_px=8,shore_actor_scale=1.8,city_stall_screen_size=[100,76],city_outdoor_monger_behind_counter=True,city_dry_night_dawn_mist=True,rain_and_distant_fog=True,rain_bitmap_bytes=0,wetness_fill_game_minutes=60,wetness_dry_game_minutes=120,wetness_speed_loss_percent=20,cpu_fault_register_capture=True,diagnostic_pause_before_sd=True,
     diagnostic_retry_by_encoder_release=True,hardware_root_cause_confirmed=False,
     exported_scene_loading_early_return_preserved=True,software_root_cause_reproduced=True,
     prior_d3_boot_confirmed_by_user=True,loading_icon='resident_seated_fisherman_boat',
@@ -139,13 +139,13 @@ report=dict(gnu=gnu,uf2_blocks=count,source_count=len(paths),uf2_base='0x8002300
     read_only_two_pack_preflight=True,lossless_indexed_shop_in_sd=True,
     hardware_usb_tested=False,ses_rebuilt=not args.gnu_only,
     hardware_platform='MKLink V4',test_counts_not_inferred_from_build=True,display_rotation=0,
-    distribution_status='publication_authorized',original_sd_integrity='unknown',git_push_allowed=True,user_reported_basic_stability=False,agent_hardware_tested=False,
+    distribution_status='d16_release_candidate',original_sd_integrity='unknown',git_push_allowed=True,user_reported_basic_stability=False,agent_hardware_tested=False,
     public_runtime_art_only=True,hardware_flashed=False,hardware_power_loss_tested=False,
     save_manual_io_retry=True,save_preflight_validation=True,save_error_stage_codes=True,city_raft_seated_sprite=True,common_wetland_player_pixels=True,world_foreground_shift_px=8,
     hold_collection_frame=True,hold_container_icon_only=True,night_road_darkening=True,
     sd_writes_single_sector_cmd24=True,sd_write_clock_hz=4000000,sd_read_clock_restored=True,sd_write_crc16=True,sd_delayed_response_poll=True,sd_busy_wait_bounded=True,sd_wire_diagnostics=True,
     large_fish_control_threshold_g=6500,large_fish_landing_stamina_percent=None,giant_additional_force_above_g=20000,
-    city_long_rod_price=3500,city_long_rod_cast_px=180,city_long_rod_reel_percent=125,umbrella_price=160,noodles_price=28,noodles_duration_game_hours=4,noodles_handling_percent=110,noodles_strike_window_percent=100,refreshments_stack=False,save_key_public=True,save_schema_version=14,save_exact_position=True,save_clock_fraction_ms=4,save_bytes=1503,legacy_save_versions=[1,2,3,4,5,6,7,8,9,10,11,12,13],
+    city_long_rod_price=3500,city_long_rod_cast_px=180,city_long_rod_reel_percent=125,umbrella_price=160,noodles_price=28,noodles_duration_game_hours=4,noodles_handling_percent=110,noodles_strike_window_percent=100,refreshments_stack=False,save_key_public=True,save_schema_version=16,save_exact_position=True,save_clock_fraction_ms=4,save_bytes=1511,legacy_save_versions=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
     legacy_save_bytes=[92,236,236,236,292,293,1317,1318,1470],map_page_implemented=True,station_travel_implemented=True,
     city_fish_implemented=True,city_fish_count=12,new_fish_count=9,collection_count=24,internal_species_slots=25,retired_redtail_slot=21,bighead_slot=24,
     silver_carp_limit_cm_kg=[100,40],bighead_carp_limit_cm_kg=[145,60],
@@ -182,12 +182,14 @@ if ses.exists() and not args.gnu_only:
     assert len(ses.with_suffix('.bin').read_bytes())==int(report['ses']['flash_end'],16)-0x80023000
 if args.write_report:
     (demo/'docs/build-validation.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    lines=['# MKLink V4 D14 线组与泡面 / Rig damage and noodles','',
+    lines=['# MKLink V4 D16 猫互动、月相与遮雨 / Cat interaction, moon and shelter','',
+        'D16更新：轻量猫选项框、岸边往返与屏内状态锁、八阶段月相及店面遮雨；继承D15：流浪猫好感/每日喂食/同伴与2.5%变异加成；修复升级容器误放流，限制竹竿配线，三档钓层及600G永久拟真假饵。V16存档1511B，保留所有V1–V15旧档。 / D16 adds a small cat menu, stable visible visits, eight moon phases and roof shelter; V16 saves retain all older files.','',
+        '继承更新：商店列表反转滚轮方向；岸上增加32/64像素每秒两档步行，反向先停、交互点自动停车。旧存档与SD资源包保持兼容。 / Local revision: reversed shop-wheel navigation and32/64px/s shore walking, retaining reverse-to-stop and interaction-point stops. Existing saves and packs remain compatible.','',
         '断线后仅10%概率损坏线组，其余保留；河豚中钩后逃脱额外独立20%概率咬断，最多消耗一副；泡面4游戏小时只提升收放线速度10%，不增加提竿窗口。热拿铁保持6游戏小时、收放线和提竿窗口各+10%。采用情境化提示，旧存档和配套SD资源保持兼容。以下为继承的D13功能。',
         'Each line break makes one10% rig-damage roll. Hooked puffer escapes add an independent20% bite-through chance, consuming at most one rig. Noodles grant10% handling only for four game hours; latte keeps both10% bonuses for six hours. Existing saves and packs remain compatible. Inherited D13 features follow.','',
         'D13新增都市3500G高碳长竿（7.2米、125%收线、大鱼张力缓冲）、160G永久雨伞及28G泡面（4游戏小时、收放线速度+10%）。雨伞岸上手持、船上固定，阻止新潮湿。泡面和35G拿铁共用状态，后买替换不叠加。V14仍1503B并独立保留V13等旧档；配套资源2026.10.19.5不变。D13新增内容待实机验证，D12稳定反馈不等同新功能已验收。',
         'D13 adds a3500G city long rod (7.2m,125% retrieval, reduced detent tension above6.5kg), a160G permanent umbrella and28G noodles (four game hours,+10% handling only). The umbrella is held on shore and mounted on the boat. Meal/drink buffs replace rather than stack. V14 remains1503bytes and retains V13 files. The same SD packs work. New D13 features await on-device testing.','',
-        'GNU RISC-V GCC 13.2、HPM SDK 1.11.0。2026-10-26。本次仅重建 GNU flash_uf2，SEGGER 工程输入已检查，未重新编译 SEGGER。','',
+        'GNU RISC-V GCC 13.2、HPM SDK 1.11.0。2026-10-27。本次仅重建 GNU flash_uf2，SEGGER 工程输入已检查，未重新编译 SEGGER。','',
         '旧的容量错误测试版保持撤回。当前版本恢复原下载器的 SD 扇区映射，开放前检查原文件系统、容量和 MBR/BPB 边界；CPU 阻塞 SPI 路径不做 DMA 地址转换或接收后缓存失效。',
         'The original faulty-capacity build remains withdrawn. The current local importer restores stock SD LBA mapping with existing-volume/geometry checks, exclusive ownership and CPU-blocking SPI pointers. Model checks do not establish integrity of user media or hardware acceptance. No user-device writes or flashing were performed. Test results are recorded separately.','',
         f'Resource version: {packs["resource_version"]}; format {packs["pack_format"]}. Valid resources keep USB hidden. Missing packages can expose the existing SD only after its filesystem/geometry pass preflight; complete CRC checks and command drain precede detach. The author approved publishing D12 after reporting basic stability on2026-10-20.','',
@@ -201,8 +203,8 @@ if args.write_report:
         if tool in report:
             for r in report[tool]['regions']:lines.append(f"| {tool.upper()} / {r['name']} | {r['used']:,} B | {r['capacity']:,} B | {r['free']:,} B |")
     lines+=['',f"SD payload: {packs['payload_bytes']:,} B; cache header: 4,096 B; unused: {report['cache_free_bytes']:,} B.",'',
-        'v14 存档 1503 字节，独立 A/B，保留原密钥、UUID、目录和所有 v1–v13 文件；保留旧红尾和旧白鲢记录，追加鳙鱼与来源。装备、声音、金币、图鉴和单鱼售价继续保留。',
-        'The 1503-byte V14 save uses separate A/B files, preserving keys, UUID, directory and all V1–V13 files. Bighead is appended; old redtail and D6 silver carp records remain valid. Gear, sound, coins, collection and exact fish prices survive.','',
+        'V16存档仍为1511字节，原8字节猫状态的空余位保存出现/走动状态，独立A/B，保留原密钥、UUID、目录和所有V1–V15文件。装备、声音、金币、图鉴和单鱼售价继续保留。',
+        'The 1511-byte V16 save packs cat visibility/walk state into the existing8cat bytes and uses separate A/B files, preserving keys, UUID, directory and all V1–V15 files. Bighead is appended; old redtail and D6 silver carp records remain valid. Gear, sound, coins, collection and exact fish prices survive.','',
         '城市12种鱼采用独立数值与饵料权重，超级体型不为旧装备削弱。两图资源包包含24项活动鱼及旧红尾兼容贴图。路线图和坐船加载图标留在固件，缓存损坏时仍可显示错误与重试。',
         'The twelve city fish use independent profiles and bait weights; giants are not weakened for old gear. Both packs carry twenty-four active collection portraits plus the retired redtail art. Route UI and the seated fisherman/boat icon stay in firmware for failure/retry screens.','',
         '未执行实板烧录、拔卡/掉电、电气、帧率、栈水位或蜂鸣器试听；中断测试使用主机 Flash 模型。保留第三方库已有宏/未使用变量警告。',

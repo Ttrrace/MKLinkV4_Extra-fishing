@@ -19,7 +19,7 @@ static void fight(fish_game_t *g,unsigned rod)
 int main(void)
 {
     fish_game_t g,a,b,loaded;uint8_t p[FISH_SAVE_PAYLOAD_BYTES],q[sizeof(p)],file[FISH_SAVE_FILE_BYTES],key[32]={1,7};uint64_t seq;
-    assert(FISH_SAVE_FILE_BYTES==1503 && FISH_ROD_COUNT==4);
+    assert(FISH_SAVE_FILE_BYTES==1511 && FISH_ROD_COUNT==4);
     store(&g,0,0,10000);assert(fish_shop_trade(&g,FISH_SHOP_LONG_ROD)==FISH_MERCHANT_EMPTY);
     store(&g,1,FISH_VENDOR_CONVENIENCE,10000);assert(fish_shop_trade(&g,FISH_SHOP_LONG_ROD)==FISH_MERCHANT_EMPTY);
     store(&g,1,FISH_VENDOR_TACKLE,3499);assert(fish_shop_trade(&g,FISH_SHOP_LONG_ROD)==FISH_MERCHANT_POOR && g.economy.coins==3499 && g.rod_index==0);
@@ -82,13 +82,13 @@ int main(void)
     /* Authenticate an actual V13 record: no new item is invented on migration. */
     fish_game_init(&g,0);g.map_index=1;g.game_minute=840;g.weather_ms=13612278;g.economy.coins=999;g.latte_remaining_ms=123456;
     fish_save_pack(&g,p);fish_save_encode(key,11,p,file);file[4]=13;
-    fish_save_seal(key,file,16,p,sizeof(p),file+16,file+32);
-    assert(fish_save_decode(key,file,sizeof(file),&seq,q) && seq==11 && fish_save_unpack(&loaded,q));
+    file[6]=FISH_SAVE_V14_PAYLOAD_BYTES&255;file[7]=FISH_SAVE_V14_PAYLOAD_BYTES>>8;fish_save_seal(key,file,16,p,FISH_SAVE_V14_PAYLOAD_BYTES,file+16,file+32);
+    assert(fish_save_decode(key,file,FISH_SAVE_V14_FILE_BYTES,&seq,q) && seq==11 && fish_save_unpack(&loaded,q));
     assert(!loaded.comforts && loaded.economy.coins==999 && loaded.latte_remaining_ms==123456 && loaded.rod_index==0);
     store(&g,1,FISH_VENDOR_CONVENIENCE,100);fish_shop_trade(&g,FISH_SHOP_NOODLES);
     fish_game_update(&g,240000);assert(!g.latte_remaining_ms && !(g.comforts&FISH_COMFORT_NOODLES));
     store(&g,1,FISH_VENDOR_CONVENIENCE,100);fish_shop_trade(&g,FISH_SHOP_NOODLES);
     g.mode=FISH_LOADING;g.travel_requested=g.travel_paid=true;g.travel_target=0;g.economy.coins=180;
     fish_game_travel_complete(&g,true);assert(!g.latte_remaining_ms && !(g.comforts&FISH_COMFORT_NOODLES));
-    puts("PASS: city3500G rod/casting/tension,160G permanent umbrella,28G4h noodles/replace/expiry/travel, V14 roundtrip and V13 compatibility;1503B saves");
+    puts("PASS: city3500G rod/casting/tension,160G permanent umbrella,28G4h noodles/replace/expiry/travel, V15 roundtrip and V13 compatibility;1511B saves");
 }

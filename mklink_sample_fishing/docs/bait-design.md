@@ -1,5 +1,11 @@
 # 鱼饵设定（可直接修改）
 
+## 当前D16 / Current D16
+
+猫互动改为场景内小选项框，岸边来回走动且屏内不刷新；增加八阶段月相与都市店面遮雨。文案更新为鱼罐头“喵”、拟真假饵“他的饵比我的鱼都大”。V16仍1511B，独立保留V15及所有旧档，原SD资源不变。详见[猫互动、月相与遮雨](cat-ui-and-moon-d16.md)，以下为历史版本。 / Scene-local cat choices, visible strolling, stable on-screen visits, eight moon phases and city awning shelter. See the current D16 guide above.
+
+D15：拟真假饵（栩栩如生的假饵）售价600G，永久使用，不扣库存次数。既有编辑表保持原稿，当前完整规则见[流浪猫、鱼获与装备](cat-and-cargo-d15.md)。 / Lifelike lure:600G, reusable.
+
 这份 Markdown 是鱼饵描述和偏好的编辑入口，导出时会同步到 `data/equipment.json` 和静态 C 表；不会覆盖本文件。只需修改下面两张表，保留 ID 和列顺序。
 
 ## 名称与描述

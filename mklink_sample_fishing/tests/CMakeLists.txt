@@ -36,7 +36,7 @@ add_executable(resource_port_tests resource_port_tests.c ${APP}/fish_resources_h
 target_include_directories(resource_port_tests PRIVATE resource_port_stubs "${APP}")
 target_compile_options(resource_port_tests PRIVATE -UNDEBUG -Wall -Wextra)
 add_test(NAME nor_cache_port_critical_sections COMMAND resource_port_tests)
-set(CORE ${APP}/fish_game.c ${APP}/fish_economy.c ${APP}/fish_species.c ${APP}/fish_species_data.c
+set(CORE ${APP}/fish_game.c ${APP}/fish_cat.c ${APP}/fish_economy.c ${APP}/fish_species.c ${APP}/fish_species_data.c
     ${APP}/fish_map.c ${APP}/fish_map_data.c ${APP}/fish_equipment.c ${APP}/fish_equipment_data.c)
 file(GLOB CRYPTO "${APP}/crypto/source/*.c")
 add_executable(giant_fight_tests giant_fight_tests.c ${CORE})
@@ -107,3 +107,12 @@ add_executable(city_gear_tests city_gear_tests.c ${CORE} ${APP}/fish_save.c ${AP
 target_include_directories(city_gear_tests PRIVATE "${APP}" "${APP}/crypto/include")
 target_compile_options(city_gear_tests PRIVATE -UNDEBUG -Wall -Wextra)
 add_test(NAME city_long_rod_umbrella_noodles COMMAND city_gear_tests)
+add_executable(cargo_tackle_tests cargo_tackle_tests.c ${CORE} ${APP}/fish_save.c ${APP}/fish_save_crypto.c ${CRYPTO})
+target_include_directories(cargo_tackle_tests PRIVATE "${APP}" "${APP}/crypto/include")
+target_compile_options(cargo_tackle_tests PRIVATE -UNDEBUG -Wall -Wextra)
+add_test(NAME cargo_capacity_tackle_depth_and_lure COMMAND cargo_tackle_tests)
+
+add_executable(cat_tests cat_tests.c ${CORE} ${APP}/fish_save.c ${APP}/fish_save_crypto.c ${CRYPTO})
+target_include_directories(cat_tests PRIVATE "${APP}" "${APP}/crypto/include")
+target_compile_options(cat_tests PRIVATE -UNDEBUG -Wall -Wextra)
+add_test(NAME stray_cat_companion_and_daily_feed COMMAND cat_tests)

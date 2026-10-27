@@ -128,6 +128,7 @@ int main(void)
     static const unsigned line_cm[]={450,650,850,1050};
     for(unsigned rod=0;rod<FISH_ROD_COUNT;rod++)for(unsigned line=0;line<FISH_LINE_COUNT;line++)
     for(int facing=-1;facing<=1;facing+=2) {
+        if(!fish_tackle_compatible(rod,line))continue;
         fish_game_init(&g,0);g.boat_x=480;g.rod_index=rod;g.facing=facing;fish_game_equip_line(&g,line);
         assert(fish_line_sets[line].distance_limit_cm==line_cm[line]);
         fish_game_input(&g,FISH_PRESS,0,0);fish_game_update(&g,1500);
@@ -169,6 +170,28 @@ int main(void)
     fish_game_input(&g,FISH_ROTATE,-1,UINT32_MAX-499);
     for(unsigned i=1;i<=100;i++) fish_game_update(&g,(UINT32_MAX-499)+i*10u);
     assert(g.shore_x==-32);
+    /* Fast walking keeps facing normalized and stops at interactions rather
+     * than skipping them; a reversal first stops, then starts slow. */
+    for(unsigned map=0;map<2;map++) {
+        fish_game_t fast,slow;
+        fish_game_init(&slow,0);slow.mode=FISH_SHORE;slow.map_index=(uint8_t)map;slow.shore_x=0;slow.boat_x=132;
+        fish_game_input(&slow,FISH_ROTATE,-1,0);fast=slow;
+        fish_game_input(&fast,FISH_ROTATE,-1,0);
+        assert(fast.shore_speed==-2 && fast.facing==-1);
+        for(unsigned t=10;t<=1000;t+=10){fish_game_update(&slow,t);fish_game_update(&fast,t);}
+        assert(slow.shore_x==-32 && fast.shore_x==-64);
+        fish_game_input(&fast,FISH_ROTATE,1,1000);assert(!fast.shore_speed && fast.facing==-1);
+        fish_game_update(&fast,1100);assert(fast.shore_x==-64);
+        fish_game_input(&fast,FISH_ROTATE,1,1100);assert(fast.shore_speed==1 && fast.facing==1);
+        fish_game_input(&fast,FISH_ROTATE,1,1100);assert(fast.shore_speed==2 && fast.facing==1);
+        for(unsigned t=1110;t<=6000;t+=10)fish_game_update(&fast,t);
+        assert(fast.shore_x==fish_docks[0].shore_x && !fast.shore_speed && fast.mode==FISH_SHORE);
+        fish_game_input(&fast,FISH_ROTATE,1,6000);assert(fast.mode==FISH_MOVE && !fast.boat_speed);
+        fish_game_init(&fast,0);fast.mode=FISH_SHORE;fast.map_index=(uint8_t)map;fast.shore_x=0;fast.boat_x=132;
+        fish_game_input(&fast,FISH_ROTATE,-2,0);
+        for(unsigned t=10;t<=12000;t+=10)fish_game_update(&fast,t);
+        assert(fast.shore_x==(map?FISH_CITY_STALL_X:FISH_SHOP_X) && !fast.shore_speed);
+    }
     fish_game_init(&g,0);g.mode=FISH_SHORE;g.boat_x=132;g.shore_x=96;g.shore_speed=-1;
     fish_game_input(&g,FISH_ROTATE,1,0);assert(g.mode==FISH_SHORE && !g.shore_speed);
     fish_game_input(&g,FISH_ROTATE,1,0);assert(g.mode==FISH_MOVE && !g.boat_speed);

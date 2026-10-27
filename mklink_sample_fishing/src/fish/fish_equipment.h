@@ -3,6 +3,7 @@
 #include "fish_species.h"
 enum {FISH_ROD_COUNT=4,FISH_LONG_ROD=3,FISH_LINE_COUNT=4,FISH_PE_LINE=3,FISH_FLOAT_COUNT=3,FISH_BAIT_COUNT=9,
       FISH_BAIT_SNAIL=6,FISH_BAIT_CORN=7,FISH_BAIT_LIFELIKE=8};
+static inline bool fish_tackle_compatible(unsigned rod,unsigned line) {return rod!=0 || line<2;}
 typedef struct {const char *name; uint16_t max_cast_px; uint8_t reel_percent,reel_tension_relief;} fish_rod_t;
 typedef struct {
     const char *name,*hook;

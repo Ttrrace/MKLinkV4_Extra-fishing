@@ -60,7 +60,7 @@ int main(void)
  b.reel_units=10000-(int)b.line_capacity_units;fish_game_input(&b,FISH_ROTATE,-40,10000);assert(fish_game_distance(&b)==(int)b.line_capacity_units);
  fish_game_init(&a,0);a.weather_ms=480000;a.wetness_units=12345;a.game_minute=480;a.map_index=1;a.latte_remaining_ms=54321;a.economy.bait_stock[8]=7;a.economy.coins=4321;
  uint8_t p[FISH_SAVE_PAYLOAD_BYTES],q[FISH_SAVE_PAYLOAD_BYTES],file[FISH_SAVE_FILE_BYTES];uint64_t sequence;
- fish_save_pack(&a,p);fish_save_encode(key,12,p,file);assert(sizeof(file)==1503);
+ fish_save_pack(&a,p);fish_save_encode(key,12,p,file);assert(sizeof(file)==1511);
  assert(fish_save_decode(key,file,sizeof(file),&sequence,q));fish_game_init(&b,0);assert(fish_save_unpack(&b,q));
  assert(b.weather_ms==a.weather_ms && b.wetness_units==a.wetness_units && b.map_index==1 && b.latte_remaining_ms==54321 && b.economy.bait_stock[8]==7);
  put32(q+FISH_SAVE_WEATHER_OFFSET,FISH_WEATHER_CYCLE_MS);assert(!fish_save_unpack(&b,q));memcpy(q,p,sizeof(q));put32(q+FISH_SAVE_WETNESS_OFFSET,FISH_WETNESS_FULL+1);assert(!fish_save_unpack(&b,q));
@@ -115,7 +115,15 @@ int main(void)
  }
  assert(rain_counts[1][15]>rain_counts[0][15]*103/100 && rain_counts[1][7]<rain_counts[0][7]*98/100);
  printf("40000 urban surface casts each:culter dry=%u rain=%u;white-stripe dry=%u rain=%u\n",rain_counts[0][15],rain_counts[1][15],rain_counts[0][7],rain_counts[1][7]);
- puts("PASS:2..48-hour rain events across midnights/maps/saves,visual strength swells,60-minute wetting/120-minute drying,exact partition/large gaps,20% line-speed loss,latte/travel/shelter and authenticated V11 migration");
+ /* Store eaves and stall canopy shelter walkers, including after closing. */
+ for(unsigned venue=0;venue<2;venue++) {
+  fish_game_init(&a,0);a.map_index=1;a.mode=FISH_SHORE;a.game_minute=0;a.weather_ms=13612278;
+  a.shore_x=venue?FISH_CITY_STALL_X:FISH_SHOP_X+18;a.wetness_units=10000;
+  assert(fish_weather_rain(&a)>0 && fish_game_sheltered(&a));fish_game_update(&a,1000);assert(a.wetness_units<10000);
+ }
+ fish_game_init(&a,0);a.map_index=1;a.mode=FISH_SHORE;a.shore_x=-160;a.weather_ms=13612278;
+ assert(!fish_game_sheltered(&a));fish_game_update(&a,1000);assert(a.wetness_units>0);
+ puts("PASS:rain/weather/save/speed plus closed-store eaves and fish-stall canopy shelter");
  printf("Storms=%u, sampled duration range=%u..%u game minutes\n",storms,shortest,longest);
  printf("Weather cycle samples:rain=%u dry=%u transition=%u game minutes\n",rainy,clear,partial);
 }
