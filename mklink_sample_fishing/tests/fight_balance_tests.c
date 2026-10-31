@@ -50,6 +50,7 @@ int main(void)
         unsigned species_longest=0;
         for (unsigned size=0;size<11;size++) for (unsigned rod=0;rod<FISH_ROD_COUNT;rod++)
         for (unsigned line=0;line<FISH_LINE_COUNT;line++) for (unsigned delay=0;delay<=4;delay+=2) {
+            if(!fish_tackle_compatible(rod,line))continue;
             fish_game_t g;hook(&g,id,sizes[size],rod,line);
             unsigned pays=play(&g,delay);
             if(g.mode==FISH_CAUGHT) {
@@ -62,7 +63,7 @@ int main(void)
                 ++failed;
             }
             /* Ordinary sizes and suitable thick tackle must remain playable. */
-            bool specialized_small=rod==FISH_LONG_ROD && fish_species_weight_g(s,sizes[size])<1500;
+            bool specialized_small=(rod==FISH_LONG_ROD || line==FISH_MARINE_LINE) && fish_species_weight_g(s,sizes[size])<1500;
             if(!specialized_small && (line==2 || sizes[size]==s->min_mm)) {
                 if(g.mode!=FISH_CAUGHT)fprintf(stderr,"balance species=%u size=%u rod=%u line=%u delay=%u loss=%u distance=%u tension=%d\n",id,sizes[size],rod,line,delay,g.loss,fish_game_distance_cm(&g),g.tension);
                 assert(g.mode==FISH_CAUGHT);

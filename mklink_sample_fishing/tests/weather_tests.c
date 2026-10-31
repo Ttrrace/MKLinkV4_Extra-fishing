@@ -60,12 +60,13 @@ int main(void)
  b.reel_units=10000-(int)b.line_capacity_units;fish_game_input(&b,FISH_ROTATE,-40,10000);assert(fish_game_distance(&b)==(int)b.line_capacity_units);
  fish_game_init(&a,0);a.weather_ms=480000;a.wetness_units=12345;a.game_minute=480;a.map_index=1;a.latte_remaining_ms=54321;a.economy.bait_stock[8]=7;a.economy.coins=4321;
  uint8_t p[FISH_SAVE_PAYLOAD_BYTES],q[FISH_SAVE_PAYLOAD_BYTES],file[FISH_SAVE_FILE_BYTES];uint64_t sequence;
- fish_save_pack(&a,p);fish_save_encode(key,12,p,file);assert(sizeof(file)==1511);
+ fish_save_pack(&a,p);fish_save_encode(key,12,p,file);assert(sizeof(file)==FISH_SAVE_FILE_BYTES && FISH_SAVE_V17_FILE_BYTES==1511);
  assert(fish_save_decode(key,file,sizeof(file),&sequence,q));fish_game_init(&b,0);assert(fish_save_unpack(&b,q));
  assert(b.weather_ms==a.weather_ms && b.wetness_units==a.wetness_units && b.map_index==1 && b.latte_remaining_ms==54321 && b.economy.bait_stock[8]==7);
  put32(q+FISH_SAVE_WEATHER_OFFSET,FISH_WEATHER_CYCLE_MS);assert(!fish_save_unpack(&b,q));memcpy(q,p,sizeof(q));put32(q+FISH_SAVE_WETNESS_OFFSET,FISH_WETNESS_FULL+1);assert(!fish_save_unpack(&b,q));
  /* Real authenticated V11 prefix, including latte/stock. Boot finds its older
   * slot, migrates into V12_A/B, and never modifies the old file. */
+ p[187]=25; /* V11 used species25 as the empty stern sentinel. */
  memcpy(old,"FSG1",4);old[4]=11;old[6]=FISH_SAVE_V11_PAYLOAD_BYTES&255;old[7]=FISH_SAVE_V11_PAYLOAD_BYTES>>8;old[8]=25;
  fish_save_seal(key,old,16,p,FISH_SAVE_V11_PAYLOAD_BYTES,old+16,old+32);uint8_t preserved[sizeof(old)];memcpy(preserved,old,sizeof(old));
  legacy_present=true;fish_save_t save;fish_game_init(&b,100);fish_save_init(&save,&b,100);

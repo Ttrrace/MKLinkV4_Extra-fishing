@@ -7,7 +7,7 @@ unsigned fish_cat_day(const fish_game_t *g){return g->weather_ms/1440000u;}
 static unsigned encounter(const fish_game_t *g){return fish_cat_day(g)*24+g->game_minute/60+1;}
 static bool scheduled(const fish_game_t *g)
 {
-    if(!g->map_index || fish_cat_owned(g) || g->game_minute<720 || g->game_minute%60>=30)return false;
+    if(g->map_index!=1 || fish_cat_owned(g) || g->game_minute<720 || g->game_minute%60>=30)return false;
     /* Independent hourly visits with a half-hour gap. Reloading cannot reroll
      * presence or reset the three interactions of the same encounter. */
     uint32_t h=(encounter(g)+53u)*0x9e3779b9u;h^=h>>16;h*=0x85ebca6bu;h^=h>>13;
@@ -15,12 +15,12 @@ static bool scheduled(const fish_game_t *g)
 }
 bool fish_cat_present(const fish_game_t *g)
 {
-    if(!g->map_index || fish_cat_owned(g))return false;
+    if(g->map_index!=1 || fish_cat_owned(g))return false;
     return g->cat.flags&FISH_CAT_READY?(g->cat.flags&FISH_CAT_VISIBLE)!=0:scheduled(g);
 }
 static bool in_cat_area(const fish_game_t *g)
 {
-    if(!g->map_index || !fish_game_ashore(g))return false;
+    if(g->map_index!=1 || !fish_game_ashore(g))return false;
     int camera=fish_game_camera(g),margin=FISH_CAT_WALK_LIMIT+48;
     return FISH_CAT_X+margin>=camera && FISH_CAT_X-margin<=camera+240;
 }
@@ -117,8 +117,8 @@ void fish_cat_interact(fish_game_t *g,unsigned action)
 bool fish_cat_catch_menu(const fish_game_t *g)
 {
     unsigned id=fish_species_parent(g->last_species);
-    return g->mode==FISH_CAUGHT && fish_cat_owned(g) && g->last_weight_g &&
-        g->last_weight_g<=FISH_CAT_SMALL_FISH_G && id!=9 && id!=10 && id!=23 &&
+    return !g->forage.return_shore && g->mode==FISH_CAUGHT && fish_cat_owned(g) && g->last_weight_g &&
+        g->last_weight_g<=FISH_CAT_SMALL_FISH_G && id!=9 && id!=10 && id!=23 && id!=25 && id!=31 && !fish_species_is_foraging(id) && id!=FISH_SQUID &&
         g->cargo_result!=FISH_FED_CAT;
 }
 bool fish_cat_feed_catch(fish_game_t *g)
@@ -126,14 +126,17 @@ bool fish_cat_feed_catch(fish_game_t *g)
     if(!fish_cat_catch_menu(g))return false;
     fish_cat_update(g);g->cat.reply_at=g->now;
     if(!fish_cat_feeds_left(g)){g->cat.reply=FISH_CAT_FULL;return false;}
-    if(g->cargo_result==FISH_STORED) {
+    if(g->cargo_result==FISH_STORED || g->cargo_result==FISH_CABIN_STORED) {
         fish_economy_t *e=&g->economy;unsigned id=g->last_species;
         uint32_t price=fish_catch_price_on(g->last_map,id,g->last_size_mm);
-        if(!e->count[id] || e->grams[id]<g->last_weight_g || e->value[id]<price)return false;
-        --e->count[id];e->grams[id]-=g->last_weight_g;e->value[id]-=price;
-        for(unsigned i=0;i<FISH_PRICE_GROUPS;i++)if(e->prices[i].count && e->prices[i].price==price) {
+        bool cabin=g->cargo_result==FISH_CABIN_STORED;unsigned k=cabin?id-FISH_COAST_FIRST:id;
+        uint16_t *count=cabin?e->cabin_count:e->count;uint32_t *grams=cabin?e->cabin_grams:e->grams,*value=cabin?e->cabin_value:e->value;
+        if(!count[k] || grams[k]<g->last_weight_g || value[k]<price)return false;
+        --count[k];grams[k]-=g->last_weight_g;value[k]-=price;
+        unsigned start=cabin?FISH_PORTABLE_PRICE_GROUPS:0,end=cabin?FISH_PRICE_GROUPS:FISH_PORTABLE_PRICE_GROUPS;
+        for(unsigned i=start;i<end;i++)if(e->prices[i].count && e->prices[i].price==price) {
             if(!--e->prices[i].count) {
-                unsigned j=i;while(j+1<FISH_PRICE_GROUPS && e->prices[j+1].count){e->prices[j]=e->prices[j+1];++j;}
+                unsigned j=i;while(j+1<end && e->prices[j+1].count){e->prices[j]=e->prices[j+1];++j;}
                 e->prices[j]=(fish_price_group_t){0};
             }
             break;

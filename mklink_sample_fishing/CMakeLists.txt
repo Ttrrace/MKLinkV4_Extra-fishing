@@ -102,7 +102,7 @@ set_source_files_properties(${FISH_CRYPTO_SOURCES}
     src/fish/fish_resources.c src/fish/fish_resources_hpm.c src/fish/fish_fs_hpm.c
     src/fish/fish_media.c src/fish/fish_usb_hpm.c src/fish/fish_usb_msc_class.c src/fish/fish_sd_guard.c
     src/fish/fish_save_hpm.c lcd/adapt/spi_sd_adapt.c lcd/fatfs/ff.c
-    src/fish/fish_game.c src/fish/fish_cat.c src/fish/fish_economy.c src/fish/fish_map.c src/fish/fish_equipment.c
+    src/fish/fish_game.c src/fish/fish_cat.c src/fish/fish_forage.c src/fish/fish_economy.c src/fish/fish_map.c src/fish/fish_equipment.c
     src/fish/fish_species.c src/fish/fish_hpm_feedback.c
     lcd/fatfs/ffunicode.c lcd/fatfs/diskio.c lcd/fatfs/spi_sd/hpm_spi_sd_disk.c
     PROPERTIES COMPILE_OPTIONS "-Os")

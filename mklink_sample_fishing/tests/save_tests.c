@@ -257,11 +257,11 @@ int main(void)
     fish_hold_add(&loaded.economy,0,235,fish_species_weight_g(&fish_species[0],235));
     manual(&s,&loaded,2);assert(!memcmp(slots[4],file,FISH_SAVE_V6_FILE_BYTES));
     fish_game_init(&g,3);fish_save_init(&s,&g,3);
-    assert(g.economy.prices[0].price==11 && g.economy.prices[0].count==1 && g.sound_mode==FISH_SOUND_FISH);
+    assert(g.economy.prices[0].price==28 && g.economy.prices[0].count==1 && g.sound_mode==FISH_SOUND_FISH);
     g.mode=FISH_SHOP;g.game_minute=720;uint32_t coins_before=g.economy.coins;
     uint32_t cargo=fish_hold_value(&g.economy);assert(fish_shop_trade(&g,0)==FISH_MERCHANT_SOLD);
     assert(g.economy.coins==coins_before+cargo && g.money.popup[0].aggregate);
-    fish_game_update(&g,g.now+FISH_MONEY_INTERVAL_MS);assert(g.money.popup[1].amount==11);
+    fish_game_update(&g,g.now+FISH_MONEY_INTERVAL_MS);assert(g.money.popup[1].amount==28);
     /* Invalid journal rejects atomically: holes, duplicate prices, excess count/value. */
     fish_game_init(&g,0);caught(&g);fish_save_pack(&g,payload);fish_game_init(&loaded,1);unchanged=loaded;
     unsigned journal=FISH_SAVE_V6_PAYLOAD_BYTES;
@@ -282,7 +282,7 @@ int main(void)
     loaded.map_index=1;manual(&s,&loaded,2);
     assert(!memcmp(slots[2],file,FISH_SAVE_V7_FILE_BYTES));
     fish_game_init(&g,0);fish_save_init(&s,&g,0);assert(g.map_index==1);
-    fish_save_pack(&g,payload);payload[FISH_SAVE_V7_PAYLOAD_BYTES]=2;assert(!fish_save_unpack(&g,payload));
+    fish_save_pack(&g,payload);payload[FISH_SAVE_V7_PAYLOAD_BYTES]=3;assert(!fish_save_unpack(&g,payload));
     /* V13 preserves exact outdoor position through every menu, plus the
      * sub-minute clock and regional weather. Invalid locations are atomic. */
     for(unsigned map=0;map<2;map++)for(unsigned land=0;land<2;land++)for(unsigned left=0;left<2;left++) {
@@ -301,6 +301,17 @@ int main(void)
         assert(loaded.weather_ms==13612278 && loaded.wetness_units==FISH_WETNESS_FULL);
         assert(loaded.latte_remaining_ms==123456 && !loaded.shore_speed);
         unchanged=loaded;output[FISH_SAVE_POSITION_OFFSET]=0;output[FISH_SAVE_POSITION_OFFSET+1]=0;
+        assert(!fish_save_unpack(&loaded,output) && !memcmp(&loaded,&unchanged,sizeof(loaded)));
+    }
+    /* Coast far-water positions exceed the old world and survive exact reload.
+     * Reject a walking position in water without modifying the destination. */
+    for(unsigned land=0;land<2;land++) {
+        fish_game_init(&g,0);g.map_index=2;g.boat_x=land?540:1368;g.shore_x=240;
+        g.mode=land?FISH_SHORE:FISH_MOVE;g.cat.friendship=50;g.weather_ms=13612278;
+        fish_save_pack(&g,payload);fish_save_encode(key,101,payload,file);
+        assert(fish_save_decode(key,file,sizeof(file),&seq,output));fish_game_init(&loaded,20);
+        assert(fish_save_unpack(&loaded,output) && loaded.map_index==2 && loaded.boat_x==g.boat_x && loaded.shore_x==240 && loaded.mode==g.mode);
+        unchanged=loaded;output[202]|=1;output[14]=0x58;output[15]=2;
         assert(!fish_save_unpack(&loaded,output) && !memcmp(&loaded,&unchanged,sizeof(loaded)));
     }
     /* Compute benchmark; excludes SD/filesystem latency and debug IO. */

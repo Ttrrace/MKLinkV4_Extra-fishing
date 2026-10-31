@@ -1,4 +1,34 @@
+# D26 当前版本 / Current version
+
+完整本版设定见[rewards-d26.md](rewards-d26.md)：批量赶海、两种金色生物、铜银基价、240px深海延伸、V21迁移。配套2026.10.31.4资源。以下为历史版本记录。 / See rewards-d26.md for current settings; earlier entries below are historical.
+
+# D25 海滩赶海 / Beachcombing
+
+气泡尖端贴近脚边，距角色48px内才显示，走远隐藏，再靠近重新出现；已采收点不再显示，发现标记仍保留在存档。气泡位于角色后方，避免盖住腿部。 / Ground-level pins appear within48px, hide outside that radius and reappear on return; harvested spots stay hidden. The actor occludes overlapping pins.
+
+痕迹采用尖端向下的水滴气泡，移除地面黑点；随机点允许紧挨出现，只排除同坐标，交互优先最近点。QTE最快档往返周期1200ms，滑块16px；绿色区统一52px，其他档保留差异。短蛸1400ms／16px、明对虾1500ms／18px、沙蚕1700ms／24px；连续有效按压窗口均不短于200ms。
+
+D25R2：工具耐久在岸上右上角，无背景；赶海点按区域随机分布，经过不停步。海岛蓝色岩体的天空遮罩与雾层视差已修正；灯塔光束在夜色之后显示，随转向形成柔和光锥，雨雾中散射增强，并由前景建筑遮挡。快艇二档由20提高到60px/s，一档10px/s；高速时增加向船尾扩散的泡沫尾浪。票价为湿地↔江河180G、江河↔海滩280G、湿地↔海滩460G；加载成功扣费，失败不扣、重复回调不重复扣，乘车时间保持原设定。完整配套资源2026.10.31.3；V20存档保持兼容。
+
+D25R2 adds freely walkable random traces, a transparent upper-right tool HUD, corrected island/sky masking and parallax, fog-scattered rotating lighthouse light, and60px/s fast motorboat wakes. Fares are180G wetland–river,280G river–coast and460G wetland–coast. Successful arrival charges once. Matching2026.10.31.3 resources are required; V20 saves remain compatible.
+
+D25R2：赶海点在各区范围内随机分布，经过时不停步、不吸附；工具耐久移到岸上右上角，无背景底板。 / Random daily positions, free walking past traces and a transparent upper-right tool HUD.
+
+沙滩／礁石每日各3～6处，04:00刷新；铲子120G、撬棍180G，各20耐久、最多一把。贝螺直接采收，其他60%触发一次滑块QTE。新增沙蚕高效海饵，直接收入饵盒。每日状态与工具、饵料保存在V20（2097B），兼容V1～V19。完整资源2026.10.31.3。详见[赶海设定](forage-d25.md)。以下为历史版本记录。
+
+Daily3–6 beach and reef spots,20-use tools, one-press escape QTE and collectible ragworm bait. V20 saves retain older progress; matching2026.10.31.3 resources required. See forage-d25.md; earlier notes below are historical.
+
 # SD卡存档 V16 / SD saves V16
+
+## 当前D18公共鱼图 / Current D18 shared fish assets
+
+总图鉴保持跨地图可看，28张鱼图无损压缩75.2%，公共缓存不随换图重写。配套资源2026.10.29.2新增common/fish.fgpk；原460KiB缓存拆分公共/场景，总余量约202KiB。V17存档与全部进度保留。详见[公共鱼图与缓存](common-fish-d18.md)，以下为历史版本。 / Lossless shared fish assets and independent cache banks; use the complete matching resource folder. Earlier sections are historical.
+
+
+## 当前D17海滩 / Current D17 beach
+
+车站右下增加海滩，1440像素长、左三分之一沙滩、向右增深、摩托快艇、单岛灯塔扫光与更强暴雨。海鱼/商店后续加入。V17独立存档保留旧档；使用完整2026.10.29.1三图资源包。详见[海滩设定](beach-d17.md)，以下为历史版本。 / Southeast beach route stop, longer world, motorboat, lighthouse and storms. Marine fish deferred; V17 saves and matching three-map resources. Earlier sections are historical.
+
 
 ## 当前D16 / Current D16
 

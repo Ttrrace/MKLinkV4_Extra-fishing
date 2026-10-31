@@ -1,6 +1,7 @@
 #include "fish_save.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int fish_storage_init(uint8_t *k){(void)k;return -1;}
@@ -69,10 +70,12 @@ int main(void)
     for(unsigned map=0;map<2;map++)for(unsigned depth=0;depth<FISH_DEPTH_OPTION_COUNT;depth++) {
         fish_game_init(&g,0);g.map_index=(uint8_t)map;g.boat_x=480;g.depth_index=(uint8_t)depth;
         cast(&g);assert(g.mode==FISH_CAST);
-        unsigned want=!depth?0:depth==FISH_DEPTH_OPTION_COUNT-1?g.cast_bottom_cm:g.cast_bottom_cm/2;
+        unsigned actual=fish_line_resolve_layer(g.line_index,g.cast_bottom_cm,
+            abs(g.cast_x-g.cast_start_x)*FISH_WORLD_CM_PER_PIXEL,!depth?0:depth==FISH_DEPTH_OPTION_COUNT-1?2:1);
+        unsigned want=actual==2?g.cast_bottom_cm:actual?g.cast_bottom_cm/2:0;
         assert(g.cast_depth_cm==want);
         fish_save_pack(&g,payload);fish_game_init(&loaded,0);assert(fish_save_unpack(&loaded,payload));
-        assert(loaded.depth_index==depth);
+        assert(loaded.depth_index==g.depth_index);
     }
     /* Existing stock becomes permanent ownership; new purchase is600G once. */
     fish_game_init(&g,0);g.map_index=1;g.game_minute=720;g.shop_venue=FISH_VENDOR_TACKLE;g.economy.coins=599;

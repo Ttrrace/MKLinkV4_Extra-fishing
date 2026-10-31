@@ -75,6 +75,15 @@ int main(void)
     b.boat_x=FISH_BOAT_RIGHT-1;fish_game_update(&b,60100);assert(b.boat_x==FISH_BOAT_RIGHT && !b.boat_speed);
     fish_game_init(&b,UINT32_MAX-49);fish_game_input(&b,FISH_ROTATE,-1,UINT32_MAX-49);
     fish_game_update(&b,50);assert(b.boat_x==149);
+    /* Only the coastal motorboat has a60px/s second gear; both directions
+     * retain deterministic50ms integration and the10px/s slow gear. */
+    for(unsigned map=0;map<3;map++)for(int sign=-1;sign<=1;sign+=2)for(int gear=1;gear<=2;gear++){
+        fish_game_init(&a,0);a.map_index=map;a.boat_x=800;a.boat_speed=sign*gear;a.facing=sign;b=a;
+        for(unsigned t=50;t<=1000;t+=50)fish_game_update(&a,t);
+        fish_game_update(&b,1000);
+        int speed=map==2 && gear==2?60:gear*10;
+        assert(a.boat_x==800+sign*speed && a.boat_x==b.boat_x && a.boat_motion_q8==b.boat_motion_q8);
+    }
     /* Unsigned timestamps work across the millisecond counter wrap. */
     fish_game_init(&g, UINT32_MAX - 500);
     fish_game_input(&g, FISH_PRESS, 0, UINT32_MAX - 500);

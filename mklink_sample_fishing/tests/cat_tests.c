@@ -112,8 +112,8 @@ int main(void)
     fish_save_pack(&g,p);fish_save_encode(key,99,p,file);assert(fish_save_decode(key,file,sizeof(file),&sequence,q));
     fish_game_init(&b,0);assert(fish_save_unpack(&b,q) && b.cat.tins==999 && b.cat.friendship==50 && b.cat.feeds==2);
     /* Original V15 cat bytes remain readable with no visibility flags. */
-    file[4]=15;fish_save_seal(key,file,16,p,FISH_SAVE_PAYLOAD_BYTES,file+16,file+32);
-    assert(fish_save_decode(key,file,sizeof(file),&sequence,q));fish_game_init(&b,0);
+    file[4]=15;file[6]=FISH_SAVE_V17_PAYLOAD_BYTES&255;file[7]=FISH_SAVE_V17_PAYLOAD_BYTES>>8;p[187]=25;fish_save_seal(key,file,16,p,FISH_SAVE_V17_PAYLOAD_BYTES,file+16,file+32);
+    assert(fish_save_decode(key,file,FISH_SAVE_V17_FILE_BYTES,&sequence,q));fish_game_init(&b,0);
     assert(fish_save_unpack(&b,q) && b.cat.friendship==50 && b.cat.feeds==2 && !b.cat.flags);
     /* Authenticated V14 migration defaults only the new cat fields. */
     file[4]=14;file[6]=FISH_SAVE_V14_PAYLOAD_BYTES&255;file[7]=FISH_SAVE_V14_PAYLOAD_BYTES>>8;

@@ -18,7 +18,7 @@ static struct rt_thread worker;
 static struct rt_semaphore request;
 static char worker_stack[4096] __attribute__((aligned(8)));
 static uint8_t queued[FISH_SAVE_FILE_BYTES];
-static uint8_t checked[FISH_SAVE_FILE_BYTES]; /* Single worker; keep journal off its stack. */
+static uint8_t checked[512]; /* Locked full path before open; readback afterward. */
 static unsigned queued_slot;
 static int completion;
 static bool busy,ready;
@@ -29,34 +29,46 @@ unsigned fish_storage_write_diagnostic(void) {return spi_sd_write_diagnostic();}
 static int failed(unsigned stage,FRESULT result) {diagnostic=(stage<<8)|(unsigned)result;return -1;}
 extern int64_t get_system_time_ms(void);
 #define SAVE_DIRECTORY "3:/FishingGame_Saves_DO_NOT_DELETE"
-static const char *paths[]={SAVE_DIRECTORY "/NorthWetland_V16_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V16_Save_B_DO_NOT_DELETE.sav",SAVE_DIRECTORY "/NorthWetland_V15_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V15_Save_B_DO_NOT_DELETE.sav",SAVE_DIRECTORY "/NorthWetland_V14_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V14_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V13_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V13_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V12_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V12_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V11_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V11_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V10_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V10_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V9_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V9_Save_B_DO_NOT_DELETE.sav",SAVE_DIRECTORY "/NorthWetland_V8_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V8_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V7_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V7_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V6_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V6_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V5_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_V5_Save_B_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_Save_A_DO_NOT_DELETE.sav",
-    SAVE_DIRECTORY "/NorthWetland_Save_B_DO_NOT_DELETE.sav"};
+static const char *paths[]={"/NorthWetland_V21_Save_A_DO_NOT_DELETE.sav","/NorthWetland_V21_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V20_Save_A_DO_NOT_DELETE.sav","/NorthWetland_V20_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V19_Save_A_DO_NOT_DELETE.sav","/NorthWetland_V19_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V18_Save_A_DO_NOT_DELETE.sav","/NorthWetland_V18_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V17_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V17_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V16_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V16_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V15_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V15_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V14_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V14_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V13_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V13_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V12_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V12_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V11_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V11_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V10_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V10_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V9_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V9_Save_B_DO_NOT_DELETE.sav","/NorthWetland_V8_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V8_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V7_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V7_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V6_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V6_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_V5_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_V5_Save_B_DO_NOT_DELETE.sav",
+    "/NorthWetland_Save_A_DO_NOT_DELETE.sav",
+    "/NorthWetland_Save_B_DO_NOT_DELETE.sav"};
+_Static_assert(sizeof(paths)/sizeof(paths[0])==FISH_SAVE_SLOT_COUNT,"save slot table");
+_Static_assert(sizeof(SAVE_DIRECTORY)-1+sizeof("/NorthWetland_V21_Save_A_DO_NOT_DELETE.sav")<=sizeof(checked),"save path buffer");
 
+static const char *slot_path_locked(unsigned slot)
+{
+    /* f_open consumes the path synchronously. Reuse the existing readback
+     * buffer under the filesystem lock instead of repeating the folder in ROM. */
+    const size_t prefix=sizeof(SAVE_DIRECTORY)-1;
+    memcpy(checked,SAVE_DIRECTORY,prefix);
+    strcpy((char *)checked+prefix,paths[slot]);
+    return (const char *)checked;
+}
 static int storage_read_locked(unsigned slot,uint8_t *data,size_t len)
 {
     if(!ready || slot>=FISH_SAVE_SLOT_COUNT) return -1;
-    FIL f;UINT count=0;FRESULT result=f_open(&f,paths[slot],FA_READ);
+    FIL f;UINT count=0;FRESULT result=f_open(&f,slot_path_locked(slot),FA_READ);
     if(result==FR_NO_FILE || result==FR_NO_PATH) return -2;
     if(result!=FR_OK) return failed(4,result);
     bool size_ok=f_size(&f)==len;
@@ -78,17 +90,26 @@ static void save_worker(void *arg)
         rt_sem_take(&request,RT_WAITING_FOREVER);
         int result=-1;FIL f;UINT count=0;
         if(fish_fs_lock()) {completion=failed(1,0);continue;}
-        FRESULT r=f_open(&f,paths[queued_slot],FA_WRITE|FA_OPEN_ALWAYS);
+        FRESULT r=f_open(&f,slot_path_locked(queued_slot),FA_WRITE|FA_OPEN_ALWAYS);
         if(r==FR_OK) {
             r=f_write(&f,queued,sizeof(queued),&count);
             if(r!=FR_OK || count!=sizeof(queued))failed(8,r);
             else {r=f_truncate(&f);if(r!=FR_OK)failed(9,r);}
             FRESULT synced=f_sync(&f);if(r==FR_OK && synced!=FR_OK)failed(10,synced);
             FRESULT closed=f_close(&f);if(r==FR_OK && synced==FR_OK && closed!=FR_OK)failed(11,closed);
-            if(r==FR_OK && count==sizeof(queued) && synced==FR_OK && closed==FR_OK &&
-               !storage_read_locked(queued_slot,checked,sizeof(checked))) {
-                if(!memcmp(queued,checked,sizeof(queued))) {result=1;diagnostic=0;}
-                else failed(12,0);
+            if(r==FR_OK && count==sizeof(queued) && synced==FR_OK && closed==FR_OK) {
+                r=f_open(&f,slot_path_locked(queued_slot),FA_READ);
+                bool same=r==FR_OK;
+                if(same) {
+                    same=f_size(&f)==sizeof(queued);
+                    for(size_t at=0;same && at<sizeof(queued);at+=sizeof(checked)) {
+                        size_t n=sizeof(queued)-at;if(n>sizeof(checked))n=sizeof(checked);
+                        r=f_read(&f,checked,n,&count);
+                        same=r==FR_OK && count==n && !memcmp(queued+at,checked,n);
+                    }
+                    if(f_close(&f)!=FR_OK)same=false;
+                }
+                if(same){result=1;diagnostic=0;}else failed(12,r);
             }
         } else failed(7,r);
         fish_fs_unlock();
@@ -112,9 +133,9 @@ int fish_storage_init(uint8_t key[32])
     FRESULT made=f_mkdir(SAVE_DIRECTORY);if(made!=FR_OK && made!=FR_EXIST) {fish_fs_unlock();return failed(3,made);}
     /* A visible, human-readable ownership note; never replace an existing note. */
     FIL note;
-    if(f_open(&note,SAVE_DIRECTORY "/README_V16_DO_NOT_DELETE.txt",FA_WRITE|FA_CREATE_NEW)==FR_OK) {
+    if(f_open(&note,SAVE_DIRECTORY "/README_V21_DO_NOT_DELETE.txt",FA_WRITE|FA_CREATE_NEW)==FR_OK) {
         static const char info[]="钓鱼游戏存档，请勿删除。\r\n"
-            "V16_A/B为本版，旧版本请一并保留。不要格式化SD。\r\n"
+            "V21_A/B为本版，旧版本请一并保留。不要格式化SD。\r\n"
             "备份整个目录，仅恢复至同一板卡。\r\n"
             "Fishing saves: keep all versions. Back up this folder; restore on the same board. Never format SD.\r\n";
         UINT count;f_write(&note,info,sizeof(info)-1,&count);f_sync(&note);f_close(&note);

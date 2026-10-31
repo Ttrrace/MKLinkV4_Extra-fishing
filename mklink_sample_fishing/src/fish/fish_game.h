@@ -8,16 +8,18 @@
 #include "fish_equipment.h"
 #include "fish_economy.h"
 #include "fish_cat.h"
+#include "fish_forage.h"
 
 enum { FISH_WORLD_WIDTH = FISH_MAP_WIDTH, FISH_HOLD_MS = 280, FISH_GUIDE_HOLD_MS=600, FISH_FULL_CHARGE_MS = 1400,
        FISH_WORLD_CM_PER_PIXEL = 4, FISH_LOSS_ANIMATION_MS = 1200,
        FISH_LINE_DAMAGE_PERCENT = 10, FISH_PUFFER_BITE_PERCENT = 20 };
 typedef enum { FISH_MOVE, FISH_AIM, FISH_CHARGE, FISH_CAST,
                FISH_WAIT, FISH_BITE, FISH_FIGHT, FISH_CAUGHT, FISH_GUIDE,
-               FISH_BAG, FISH_SHORE, FISH_LOST, FISH_SHOP, FISH_HOLD, FISH_ROUTE, FISH_LOADING,FISH_CAT } fish_mode_t;
+               FISH_BAG, FISH_SHORE, FISH_LOST, FISH_SHOP, FISH_HOLD, FISH_ROUTE, FISH_LOADING,FISH_CAT,FISH_SINK,FISH_RECOVER,FISH_FORAGE_QTE } fish_mode_t;
 enum {FISH_BAG_ROD,FISH_BAG_LINE,FISH_BAG_FLOAT,FISH_BAG_BAIT,FISH_BAG_DEPTH,FISH_BAG_MISC,
       FISH_BAG_DOCK,FISH_BAG_GUIDE,FISH_BAG_BACK,FISH_BAG_SAVE,FISH_BAG_SOUND,FISH_BAG_COUNT};
 enum {FISH_BAG_VISIBLE_COUNT=FISH_BAG_COUNT-1}; /* Dock ID reserved, no menu entry. */
+enum {FISH_BAG_LAMP=FISH_BAG_DOCK}; /* Reuse the former unused socket. */
 typedef enum { FISH_LOSS_NONE, FISH_LOSS_MISSED, FISH_LOSS_BREAK,
                FISH_LOSS_SLACK, FISH_LOSS_RANGE, FISH_LOSS_EARLY } fish_loss_t;
 typedef enum { FISH_ROTATE, FISH_PRESS, FISH_RELEASE } fish_event_t;
@@ -42,7 +44,7 @@ typedef struct fish_game {
     int8_t shore_speed; /* -2/-1/0/+1/+2: fast/slow walk and stop. */
     uint16_t shore_remainder;
     uint8_t shore_walk_phase;
-    uint16_t cast_bottom_cm,cast_depth_cm;
+    uint16_t cast_bottom_cm,cast_depth_cm,rig_depth_cm;
     uint32_t random_state;
     uint8_t pending_species, last_species;
     uint8_t pending_variant;
@@ -58,6 +60,7 @@ typedef struct fish_game {
     uint8_t line_strength;
     bool line_damaged; /* Result of the last loss; occupies existing padding. */
     bool line_bitten; /* Puffer escape result; also fits the alignment gap. */
+    bool short_line;
     int tension, reel_units;
     uint16_t stamina,stamina_max,recovery_ms;
     bool stamina_recovering;
@@ -74,6 +77,7 @@ typedef struct fish_game {
     uint8_t species_best_map[FISH_SPECIES_COUNT],last_map;
     fish_economy_t economy;
     fish_cat_t cat;
+    fish_forage_t forage;
     fish_money_feedback_t money; /* Visual feedback only; never saved. */
     uint32_t clock_at;
     uint32_t latte_remaining_ms; /* One real second is one game minute; persists in V11. */
@@ -86,8 +90,10 @@ typedef struct fish_game {
     fish_cargo_result_t cargo_result;
 } fish_game_t;
 
-enum {FISH_MAP_COUNT=2,FISH_TRAVEL_FARE=180,FISH_TRAVEL_MINUTES=300};
-enum {FISH_COMFORT_UMBRELLA=1,FISH_COMFORT_NOODLES=2,FISH_NOODLES_DURATION_MS=240000};
+enum {FISH_TRAVEL_FARE=180,FISH_TRAVEL_SEA_FARE=280,FISH_TRAVEL_MINUTES=300,FISH_MOTOR_FAST_PX_PER_S=60};
+unsigned fish_game_travel_fare(unsigned from,unsigned to);
+enum {FISH_COMFORT_UMBRELLA=1,FISH_COMFORT_NOODLES=2,FISH_COMFORT_LAMP=4,FISH_COMFORT_LAMP_ON=8,FISH_NOODLES_DURATION_MS=240000};
+enum {FISH_MARINE_SINK_CM_PER_S=200,FISH_MARINE_RECOVER_CM_PER_S=300};
 enum {FISH_WEATHER_PERIOD_MS=4320000,FISH_WEATHER_CYCLE_MS=32*FISH_WEATHER_PERIOD_MS,
       FISH_WEATHER_FADE_MS=8000,FISH_WETNESS_FULL=120000,FISH_WET_SPEED_LOSS_PERCENT=20};
 unsigned fish_weather_rain(const fish_game_t *g); /* 0..255, smooth rain envelope. */
@@ -122,6 +128,14 @@ int fish_game_pull(const fish_game_t *g, uint32_t elapsed_ms);
 void fish_game_float(const fish_game_t *g, int *dx, int *dy);
 int fish_game_distance(const fish_game_t *g);
 unsigned fish_game_distance_cm(const fish_game_t *g);
+unsigned fish_game_line_limit_cm(const fish_game_t *g);
+unsigned fish_game_current_depth_cm(const fish_game_t *g);
+bool fish_game_lamp_active(const fish_game_t *g);
+bool fish_game_lamp_menu(const fish_game_t *g);
+unsigned fish_game_bag_count(const fish_game_t *g);
+unsigned fish_game_bag_item_at(const fish_game_t *g,unsigned position);
+static inline bool fish_game_rig_in_water(const fish_game_t *g)
+{return (g->mode>=FISH_CAST && g->mode<=FISH_FIGHT) || g->mode==FISH_SINK || g->mode==FISH_RECOVER;}
 unsigned fish_game_max_cast_px(const fish_game_t *g);
 unsigned fish_game_rod_flex(const fish_game_t *g);
 bool fish_game_burst_warning(const fish_game_t *g);

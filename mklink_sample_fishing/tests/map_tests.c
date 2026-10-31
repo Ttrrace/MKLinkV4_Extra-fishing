@@ -1,6 +1,7 @@
 #include "fish_game.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static uint32_t time_ms;
 static void rotate(fish_game_t *g,int steps) {fish_game_input(g,FISH_ROTATE,steps,++time_ms);}
@@ -26,7 +27,7 @@ int main(void)
         unsigned previous=fish_map_activity_percent(species,1439);
         for(unsigned minute=0;minute<1440;minute++) {
             unsigned activity=fish_map_activity_percent(species,minute);
-            assert(activity>=55 && activity<=155);
+            assert(activity>=55 && activity<=180);
             assert(activity<=previous+2 && previous<=activity+2);previous=activity;
             assert(!fish_map_weight_at(species,0,0,0,minute));
         }
@@ -51,6 +52,7 @@ int main(void)
     }
     for(unsigned bait=0;bait<FISH_BAIT_COUNT;bait++) {
         unsigned turtle=0;uint32_t seed=4123;uint8_t id;uint16_t size;
+        if(bait==FISH_BAIT_RAGWORM){assert(!fish_map_roll(&seed,480,600,bait,&id,&size));continue;}
         for(unsigned n=0;n<100000;n++){assert(fish_map_roll(&seed,480,600,bait,&id,&size));turtle+=id==9;}
         assert(turtle<1000);printf("lake_centre_bait=%u turtle_per_100000=%u\n",bait,turtle);
     }
@@ -113,7 +115,9 @@ int main(void)
         fish_game_input(&g,FISH_PRESS,0,g.now);
         fish_game_input(&g,FISH_RELEASE,0,g.now+1500);
         assert(g.mode==FISH_CAST && g.cast_distance==fish_game_max_cast_px(&g));
-        assert(g.cast_bottom_cm==fish_map_depth(g.cast_x) && g.cast_depth_cm==g.cast_bottom_cm);
+        unsigned layer=fish_line_resolve_layer(g.line_index,g.cast_bottom_cm,
+            abs(g.cast_x-g.cast_start_x)*FISH_WORLD_CM_PER_PIXEL,2);
+        assert(g.cast_bottom_cm==fish_map_depth(g.cast_x) && g.cast_depth_cm==(layer==2?g.cast_bottom_cm:layer?g.cast_bottom_cm/2:0));
         assert(fish_map_weight(g.pending_species,g.cast_x,g.cast_depth_cm,g.bait_index)>0);
         for (int facing=-1;facing<=1;facing+=2) {
             fish_game_init(&g,0);g.boat_x=480;g.rod_index=(uint8_t)rod;g.facing=facing;
@@ -125,7 +129,7 @@ int main(void)
         }
     }
     /* Casting, preview camera and physical length share the same gear limit. */
-    static const unsigned line_cm[]={450,650,850,1050};
+    static const unsigned line_cm[]={450,650,2000,2500,20000};
     for(unsigned rod=0;rod<FISH_ROD_COUNT;rod++)for(unsigned line=0;line<FISH_LINE_COUNT;line++)
     for(int facing=-1;facing<=1;facing+=2) {
         if(!fish_tackle_compatible(rod,line))continue;

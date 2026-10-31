@@ -39,3 +39,14 @@ if city.exists():
         assert key not in rows;rows[key]=(int(pose),a,b)
     assert set(rows)==set(keys)
     out.with_name('fish_city_monger_dialogue_data.h').write_text('/* Generated from docs/city-fishmonger-dialogue.md. */\n#ifndef FISH_CITY_MONGER_DIALOGUE_DATA_H\n#define FISH_CITY_MONGER_DIALOGUE_DATA_H\nstatic const fish_merchant_dialogue_t fish_city_monger_dialogue[15]={\n'+''.join('    {'+str(rows[k][0])+',{'+','.join(json.dumps(s,ensure_ascii=False) for s in rows[k][1:])+'}},\n' for k in keys)+'};\n#endif\n',encoding='utf-8')
+coast=root/'docs/coast-merchant-dialogue.md'
+if coast.exists():
+    coast_keys=keys+('oarfish','peacock_mantis');rows={}
+    for line in coast.read_text(encoding='utf-8').splitlines():
+        cells=[c.strip() for c in line.strip().strip('|').split('|')]
+        if cells[0] not in coast_keys:continue
+        key,pose,a,b=cells;assert key not in rows and 0<=int(pose)<4 and all(0<len(s)<=16 for s in (a,b)),line
+        rows[key]=(int(pose),a,b)
+    assert set(rows)==set(coast_keys)
+    out.with_name('fish_coast_dialogue_data.h').write_text('/* Generated from docs/coast-merchant-dialogue.md. */\n#ifndef FISH_COAST_DIALOGUE_DATA_H\n#define FISH_COAST_DIALOGUE_DATA_H\nstatic const fish_merchant_dialogue_t fish_coast_dialogue[17]={\n'+''.join('    {'+str(rows[k][0])+',{'+','.join(json.dumps(s,ensure_ascii=False) for s in rows[k][1:])+'}},\n' for k in coast_keys)+'};\n#endif\n',encoding='utf-8')
+    print('Exported34 editable coastal lines, including oarfish and peacock mantis greetings.')

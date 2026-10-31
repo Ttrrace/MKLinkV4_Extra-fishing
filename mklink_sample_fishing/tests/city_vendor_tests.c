@@ -86,7 +86,7 @@ int main(void)
  uint8_t p[FISH_SAVE_PAYLOAD_BYTES],q[FISH_SAVE_PAYLOAD_BYTES],key[32]={1,2},old[FISH_SAVE_V10_FILE_BYTES]={0};uint64_t seq;
  fish_save_pack(&g,p);fish_game_init(&a,0);assert(fish_save_unpack(&a,p) && a.latte_remaining_ms==123456 && a.economy.bait_stock[6]==998 && a.economy.bait_stock[8]==12 && a.map_index==1);
  memcpy(old,"FSG1",4);old[4]=10;old[6]=FISH_SAVE_V10_PAYLOAD_BYTES&255;old[7]=FISH_SAVE_V10_PAYLOAD_BYTES>>8;old[8]=17;
- fish_save_seal(key,old,16,p,FISH_SAVE_V10_PAYLOAD_BYTES,old+16,old+32);
+ p[187]=25;fish_save_seal(key,old,16,p,FISH_SAVE_V10_PAYLOAD_BYTES,old+16,old+32);
  assert(fish_save_decode(key,old,sizeof(old),&seq,q) && seq==17);fish_game_init(&a,0);assert(fish_save_unpack(&a,q));
  assert(a.map_index==1 && a.economy.coins==g.economy.coins && !a.latte_remaining_ms && !a.economy.bait_stock[6] && !a.economy.bait_stock[8]);
  g.latte_remaining_ms=360001;fish_save_pack(&g,p);assert(!fish_save_unpack(&a,p));
@@ -96,6 +96,24 @@ int main(void)
  assert(g.shore_x==FISH_CITY_STALL_X && !g.shore_speed);tap(&g,5000);assert(g.mode==FISH_SHOP && g.shop_venue==FISH_VENDOR_TACKLE);
  g.shop_index=15;tap(&g,5002);fish_game_input(&g,FISH_ROTATE,-1,5004);for(unsigned t=5020;t<12000;t+=16)fish_game_update(&g,t);
  assert(g.shore_x==FISH_SHOP_X && !g.shore_speed);tap(&g,12000);assert(g.mode==FISH_SHOP && g.shop_venue==FISH_VENDOR_CONVENIENCE && g.shop_index==19);
- puts("PASS: separate vendors, unchanged wetland, specialized bait habitats/size/wait statistics, latte10%/6h/travel/wrap and V10-to-V11 preservation");
+ /* Coastal steel fish stall: stop on walking, buy tackle, sell cross-map
+  * catches, close at16:00 and return to the saved coastal position. */
+ fish_game_init(&g,0);g.map_index=2;g.mode=FISH_SHORE;g.shore_x=FISH_BEACH_STALL_X+128;g.boat_x=540;g.game_minute=720;g.economy.coins=5000;
+ fish_game_input(&g,FISH_ROTATE,-1,0);for(unsigned t=16;t<7000;t+=16)fish_game_update(&g,t);
+ assert(g.shore_x==FISH_BEACH_STALL_X && !g.shore_speed && fish_game_at_shop(&g) && fish_game_sheltered(&g));
+ tap(&g,7000);assert(g.mode==FISH_SHOP && g.shop_venue==FISH_VENDOR_TACKLE);
+ assert(fish_shop_trade(&g,1)==FISH_MERCHANT_EMPTY);
+ assert(fish_shop_trade(&g,FISH_SHOP_MARINE_LINE)==FISH_MERCHANT_BOUGHT && (g.economy.lines&(1u<<FISH_MARINE_LINE)));
+ assert(fish_hold_add_on(&g.economy,1,0,200,150)==FISH_STORED);
+ unsigned before=g.economy.coins;assert(fish_shop_trade(&g,0)==FISH_MERCHANT_SOLD && g.economy.coins>before);
+ fish_save_pack(&g,p);fish_game_init(&a,0);assert(fish_save_unpack(&a,p) && a.map_index==2 && a.shore_x==FISH_BEACH_STALL_X);
+ g.shop_index=FISH_SHOP_BACK;tap(&g,7002);assert(g.mode==FISH_SHORE);
+ const unsigned coastal_hours[]={359,360,959,960};
+ for(unsigned i=0;i<4;i++) {unsigned now=8000+i*10;g.game_minute=coastal_hours[i];g.clock_at=now;g.clock_remainder_ms=0;g.mode=FISH_SHORE;tap(&g,now);assert((g.mode==FISH_SHOP)==(i==1 || i==2));}
+ g.mode=FISH_SHORE;g.shore_x=FISH_BEACH_STALL_X;g.clock_at=g.now=9000;
+ fish_game_input(&g,FISH_ROTATE,-1,9000);for(unsigned t=9016;t<18000;t+=16)fish_game_update(&g,t);
+ assert(g.shore_x==fish_map_station(2) && !g.shore_speed && fish_game_at_station(&g) && !fish_game_at_shop(&g));
+ tap(&g,18000);assert(g.mode==FISH_ROUTE);
+ puts("PASS: city/coastal vendor trades, coastal shelter/walk/hours/save, specialized bait, latte and old-save preservation");
  printf("Urban bottom mean waits: general=%.1fms snail=%.1fms; snail blue-carp hits=%u/10000\n",waits[0]/10000.0,waits[1]/10000.0,selected[17]);
 }

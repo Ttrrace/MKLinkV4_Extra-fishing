@@ -108,5 +108,26 @@
     "price": 600,
     "real_name_reference": "https://fish.shimano.com/en-GB/product/line/braided/a155f00000c5ijsqa3.html",
     "note": "Generic8-carrier PE braid; gameplay strength/length/encounter tuning is fictional, not a real product rating."
+  },
+  "forage_bait": {
+    "id": "ragworm",
+    "index": 9,
+    "name_zh": "沙蚕",
+    "short_description_zh": "其貌不扬，但没有鱼能拒绝它",
+    "wetland_weights": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "city_weights": {},
+    "consumable": true
   }
 }
